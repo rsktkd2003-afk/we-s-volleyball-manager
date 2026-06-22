@@ -1,0 +1,39 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "we-s-volleyball-manager",
+          "appId": "1:131334385712:android:702e0d5add17c550963df5",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "we-s-volleyball-manager",
+          "configurations": {
+            "android": "1:131334385712:android:702e0d5add17c550963df5",
+            "ios": "1:131334385712:ios:e5fcbc933db1998b963df5",
+            "macos": "1:131334385712:ios:e5fcbc933db1998b963df5",
+            "web": "1:131334385712:web:ea30d265235aace0963df5",
+            "windows": "1:131334385712:web:60e10783c3e4058c963df5"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
