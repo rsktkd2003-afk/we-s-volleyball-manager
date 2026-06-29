@@ -6,11 +6,7 @@ class PlayerList extends StatelessWidget {
   final List<Player> players;
   final void Function(Player player) onTap;
 
-  const PlayerList({
-    super.key,
-    required this.players,
-    required this.onTap,
-  });
+  const PlayerList({super.key, required this.players, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +18,7 @@ class PlayerList extends StatelessWidget {
         return ListTile(
           leading: const Icon(Icons.person),
           title: Text(player.name),
-          subtitle: Text(
-            '${player.position} | ${player.height}cm',
-          ),
+          subtitle: Text('${player.position} | ${player.height}cm'),
           onTap: () => onTap(player),
         );
       },

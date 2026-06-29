@@ -6,9 +6,7 @@ Future<bool?> showSaveTemplateDialog(BuildContext context) {
     builder: (context) {
       return AlertDialog(
         title: const Text('テンプレートとして保存しますか?'),
-        content: const Text(
-          'この練習内容をテンプレートとして保存しますか',
-        ),
+        content: const Text('この練習内容をテンプレートとして保存しますか'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

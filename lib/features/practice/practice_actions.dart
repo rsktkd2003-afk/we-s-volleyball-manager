@@ -11,32 +11,30 @@ import '../../utils/date_time_utils.dart';
 
 class PracticeActions {
   PracticeActions({
-    required this.context,
     required this.practices,
     required this.practiceTemplates,
     required this.onChanged,
     required this.onSave,
   });
 
-  final BuildContext context;
   final List<Practice> practices;
   final List<PracticeTemplate> practiceTemplates;
   final VoidCallback onChanged;
   final Future<void> Function() onSave;
 
-  Future<void> showPracticeAddMenu() async {
+  Future<void> showPracticeAddMenu(BuildContext context) async {
     final result = await showPracticeAddMenuDialog(context);
+    if (!context.mounted) return;
 
     if (result == 'template') {
-      await addPracticeFromTemplate();
+      await addPracticeFromTemplate(context);
     } else if (result == 'custom') {
-      await addPractice();
+      await addPractice(context);
     }
   }
 
-  Future<void> addPractice() async {
+  Future<void> addPractice(BuildContext context) async {
     final result = await showAddPracticeDialog(context);
-
     if (result == null) return;
 
     await addPractices(
@@ -48,8 +46,12 @@ class PracticeActions {
       count: result.count,
     );
 
+    if (!context.mounted) return;
+
     final shouldSave = await showSaveTemplateDialog(context);
     if (shouldSave != true) return;
+
+    if (!context.mounted) return;
 
     final templateName = await showTemplateNameDialog(context);
     if (templateName == null || templateName.trim().isEmpty) return;
@@ -69,11 +71,11 @@ class PracticeActions {
     await onSave();
   }
 
-  Future<void> addPracticeFromTemplate() async {
+  Future<void> addPracticeFromTemplate(BuildContext context) async {
     if (practiceTemplates.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('保存済みのテンプレートがありません。')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('保存済みのテンプレートがありません。')));
       return;
     }
 
@@ -85,6 +87,7 @@ class PracticeActions {
     );
 
     if (template == null) return;
+    if (!context.mounted) return;
 
     final selectedDate = await showDatePicker(
       context: context,

@@ -90,10 +90,7 @@ class Player {
     };
   }
 
-  factory Player.fromJson(
-    Map<String, dynamic> json, {
-    String id = '',
-  }) {
+  factory Player.fromJson(Map<String, dynamic> json, {String id = ''}) {
     return Player(
       id: id,
       name: json['name'] ?? '',

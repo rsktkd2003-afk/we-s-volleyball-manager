@@ -39,11 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
     initTeam();
   }
 
-Future<void> initTeam() async {
-  teamId = await TeamService.getCurrentTeamId();
-  listenPlayers();
-}
-
+  Future<void> initTeam() async {
+    teamId = await TeamService.getCurrentTeamId();
+    if (!mounted) return;
+    listenPlayers();
+  }
 
   void listenPlayers() {
     playersSubscription = FirebaseFirestore.instance
@@ -51,12 +51,14 @@ Future<void> initTeam() async {
         .where('teamId', isEqualTo: teamId)
         .snapshots()
         .listen((snapshot) {
-      setState(() {
-        players = snapshot.docs.map((doc) {
-          return Player.fromJson(doc.data(), id: doc.id);
-        }).toList();
-      });
-    });
+          if (!mounted) return;
+
+          setState(() {
+            players = snapshot.docs.map((doc) {
+              return Player.fromJson(doc.data(), id: doc.id);
+            }).toList();
+          });
+        });
   }
 
   @override
@@ -66,29 +68,30 @@ Future<void> initTeam() async {
   }
 
   List<Player> getFilteredPlayers() {
-  List<Player> result = [...players];
+    List<Player> result = [...players];
 
-  if (selectedGrade != '全員') {
-    result = result.where((p) => p.grade == selectedGrade).toList();
+    if (selectedGrade != '全員') {
+      result = result.where((p) => p.grade == selectedGrade).toList();
+    }
+
+    if (selectedPosition != '全員') {
+      result = result.where((p) => p.position == selectedPosition).toList();
+    }
+
+    if (sortType == '背番号') {
+      result.sort((a, b) => a.number.compareTo(b.number));
+    } else if (sortType == '学年') {
+      result.sort((a, b) => a.grade.compareTo(b.grade));
+    } else if (sortType == '名前') {
+      result.sort((a, b) => a.name.compareTo(b.name));
+    }
+
+    return result;
   }
-
-  if (selectedPosition != '全員') {
-    result = result.where((p) => p.position == selectedPosition).toList();
-  }
-
-  if (sortType == '背番号') {
-    result.sort((a, b) => a.number.compareTo(b.number));
-  } else if (sortType == '学年') {
-    result.sort((a, b) => a.grade.compareTo(b.grade));
-  } else if (sortType == '名前') {
-    result.sort((a, b) => a.name.compareTo(b.name));
-  }
-
-  return result;
-}
 
   Future<void> addPlayer() async {
     final name = await showAddPlayerDialog(context);
+    if (!mounted) return;
 
     if (name == null || name.trim().isEmpty) return;
 
@@ -105,13 +108,11 @@ Future<void> initTeam() async {
       blockReach: 0.0,
     );
 
-    await FirebaseFirestore.instance
-        .collection('players')
-        .add({
-          ...newPlayer.toJson(),
-          'teamId': teamId,
-          'ownerUid': FirebaseAuth.instance.currentUser?.uid,
-        });
+    await FirebaseFirestore.instance.collection('players').add({
+      ...newPlayer.toJson(),
+      'teamId': teamId,
+      'ownerUid': FirebaseAuth.instance.currentUser?.uid,
+    });
   }
 
   Future<void> openPlayerDetail(Player player) async {
@@ -121,6 +122,7 @@ Future<void> initTeam() async {
         builder: (context) => PlayerDetailScreen(player: player),
       ),
     );
+    if (!mounted) return;
 
     if (result == 'delete') {
       await FirebaseFirestore.instance
@@ -144,93 +146,97 @@ Future<void> initTeam() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isPlayerTab ? '選手' : '予定'),
-      ),
+      appBar: AppBar(title: Text(isPlayerTab ? '選手' : '予定')),
       body: isPlayerTab
-    ? Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
+          ? Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: selectedGrade,
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              initialValue: selectedGrade,
+                              decoration: const InputDecoration(
+                                labelText: '学年',
+                                border: OutlineInputBorder(),
+                              ),
+                              items:
+                                  ['全員', '1年', '2年', '3年', '4年', '社会人', '未設定']
+                                      .map(
+                                        (grade) => DropdownMenuItem(
+                                          value: grade,
+                                          child: Text(grade),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedGrade = value!;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              initialValue: selectedPosition,
+                              decoration: const InputDecoration(
+                                labelText: 'ポジション',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: ['全員', 'S', 'WS', 'MB', 'OP', 'L', '未設定']
+                                  .map(
+                                    (position) => DropdownMenuItem(
+                                      value: position,
+                                      child: Text(position),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedPosition = value!;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        initialValue: sortType,
                         decoration: const InputDecoration(
-                          labelText: '学年',
+                          labelText: '並び順',
                           border: OutlineInputBorder(),
                         ),
-                        items: ['全員', '1年', '2年', '3年', '4年', '社会人', '未設定']
-                            .map((grade) => DropdownMenuItem(
-                                  value: grade,
-                                  child: Text(grade),
-                                ))
+                        items: ['背番号', '学年', '名前']
+                            .map(
+                              (sort) => DropdownMenuItem(
+                                value: sort,
+                                child: Text(sort),
+                              ),
+                            )
                             .toList(),
                         onChanged: (value) {
                           setState(() {
-                            selectedGrade = value!;
+                            sortType = value!;
                           });
                         },
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: selectedPosition,
-                        decoration: const InputDecoration(
-                          labelText: 'ポジション',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: ['全員', 'S', 'WS', 'MB', 'OP', 'L', '未設定']
-                            .map((position) => DropdownMenuItem(
-                                  value: position,
-                                  child: Text(position),
-                                ))
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedPosition = value!;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: sortType,
-                  decoration: const InputDecoration(
-                    labelText: '並び順',
-                    border: OutlineInputBorder(),
+                    ],
                   ),
-                  items: ['背番号', '学年', '名前']
-                      .map((sort) => DropdownMenuItem(
-                            value: sort,
-                            child: Text(sort),
-                          ))
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      sortType = value!;
-                    });
-                  },
+                ),
+                Expanded(
+                  child: PlayerList(
+                    players: getFilteredPlayers(),
+                    onTap: openPlayerDetail,
+                  ),
                 ),
               ],
-            ),
-          ),
-          Expanded(
-            child: PlayerList(
-              players: getFilteredPlayers(),
-              onTap: openPlayerDetail,
-            ),
-          ),
-        ],
-      )
-    : const ScheduleScreen(),
-    
+            )
+          : const ScheduleScreen(),
       floatingActionButton: isPlayerTab
           ? FloatingActionButton(
               onPressed: addPlayer,
@@ -245,10 +251,7 @@ Future<void> initTeam() async {
           });
         },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: '選手',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: '選手'),
           BottomNavigationBarItem(
             icon: Icon(Icons.calendar_month),
             label: '予定',

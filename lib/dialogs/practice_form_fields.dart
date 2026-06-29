@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 Widget sectionTitle(String text) {
   return Align(
     alignment: Alignment.centerLeft,
-    child: Text(
-      text,
-      style: const TextStyle(fontWeight: FontWeight.bold),
-    ),
+    child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
   );
 }
 
@@ -16,14 +13,19 @@ DropdownButtonFormField<String> textDropdown({
   required List<String> items,
   required ValueChanged<String> onChanged,
 }) {
- final user = FirebaseAuth.instance.currentUser;
-final myName = user?.displayName ?? user?.email ?? 'ログインユーザー';
-
-ListTile(
-  leading: const Icon(Icons.person),
-  title: const Text('回答者'),
-  subtitle: Text(myName),
-)
+  return DropdownButtonFormField<String>(
+    initialValue: value,
+    decoration: InputDecoration(
+      labelText: label,
+      border: const OutlineInputBorder(),
+    ),
+    items: items
+        .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+        .toList(),
+    onChanged: (v) {
+      if (v != null) onChanged(v);
+    },
+  );
 }
 
 Widget timeDropdownRow({

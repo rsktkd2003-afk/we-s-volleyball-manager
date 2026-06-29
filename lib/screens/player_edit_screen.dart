@@ -4,10 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/player.dart';
 
 class PlayerEditScreen extends StatefulWidget {
-  const PlayerEditScreen({
-    super.key,
-    required this.player,
-  });
+  const PlayerEditScreen({super.key, required this.player});
 
   final Player player;
 
@@ -48,26 +45,33 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
     dominantHandController = TextEditingController(text: player.dominantHand);
     gradeController = TextEditingController(text: player.grade);
 
-    heightController =
-        TextEditingController(text: player.height.toStringAsFixed(1));
-    weightController =
-        TextEditingController(text: player.weight.toStringAsFixed(1));
-    standingReachController =
-        TextEditingController(text: player.standingReach.toStringAsFixed(1));
-    maxReachController =
-        TextEditingController(text: player.maxReach.toStringAsFixed(1));
-    blockReachController =
-        TextEditingController(text: player.blockReach.toStringAsFixed(1));
+    heightController = TextEditingController(
+      text: player.height.toStringAsFixed(1),
+    );
+    weightController = TextEditingController(
+      text: player.weight.toStringAsFixed(1),
+    );
+    standingReachController = TextEditingController(
+      text: player.standingReach.toStringAsFixed(1),
+    );
+    maxReachController = TextEditingController(
+      text: player.maxReach.toStringAsFixed(1),
+    );
+    blockReachController = TextEditingController(
+      text: player.blockReach.toStringAsFixed(1),
+    );
 
     spikeController = TextEditingController(text: player.spike.toString());
     serveController = TextEditingController(text: player.serve.toString());
-    receptionController =
-        TextEditingController(text: player.reception.toString());
+    receptionController = TextEditingController(
+      text: player.reception.toString(),
+    );
     digController = TextEditingController(text: player.dig.toString());
     tossController = TextEditingController(text: player.toss.toString());
     blockController = TextEditingController(text: player.block.toString());
-    mobilityController =
-        TextEditingController(text: player.mobility.toString());
+    mobilityController = TextEditingController(
+      text: player.mobility.toString(),
+    );
   }
 
   @override
@@ -145,10 +149,7 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
       appBar: AppBar(
         title: const Text('選手編集'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: savePlayer,
-          ),
+          IconButton(icon: const Icon(Icons.save), onPressed: savePlayer),
         ],
       ),
       body: ListView(
@@ -204,10 +205,7 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
 }
 
 class _TextField extends StatelessWidget {
-  const _TextField({
-    required this.controller,
-    required this.label,
-  });
+  const _TextField({required this.controller, required this.label});
 
   final TextEditingController controller;
   final String label;

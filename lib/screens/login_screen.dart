@@ -25,11 +25,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       if (isRegisterMode) {
-        final credential =
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: emailController.text.trim(),
-          password: passwordController.text.trim(),
-        );
+        final credential = await FirebaseAuth.instance
+            .createUserWithEmailAndPassword(
+              email: emailController.text.trim(),
+              password: passwordController.text.trim(),
+            );
 
         final user = credential.user;
 
@@ -38,11 +38,11 @@ class _LoginScreenState extends State<LoginScreen> {
               .collection('users')
               .doc(user.uid)
               .set({
-            'email': user.email,
-            'role': 'member',
-            'playerId': '',
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+                'email': user.email,
+                'role': 'member',
+                'playerId': '',
+                'createdAt': FieldValue.serverTimestamp(),
+              });
         }
       } else {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -117,10 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 24),
-                Text(
-                  title,
-                  style: const TextStyle(fontSize: 20),
-                ),
+                Text(title, style: const TextStyle(fontSize: 20)),
                 const SizedBox(height: 24),
                 TextField(
                   controller: emailController,

@@ -7,16 +7,13 @@ Future<void> showEditScheduleDialog(
   BuildContext context,
   TeamSchedule schedule,
 ) async {
-  final titleController =
-      TextEditingController(text: schedule.title);
+  final titleController = TextEditingController(text: schedule.title);
 
-  final locationController =
-      TextEditingController(text: schedule.location);
+  final locationController = TextEditingController(text: schedule.location);
 
   DateTime selectedDate = schedule.start;
 
-  TimeOfDay startTime =
-      TimeOfDay.fromDateTime(schedule.start);
+  TimeOfDay startTime = TimeOfDay.fromDateTime(schedule.start);
 
   int durationMinutes = schedule.durationMinutes;
 
@@ -33,29 +30,21 @@ Future<void> showEditScheduleDialog(
                 children: [
                   TextField(
                     controller: titleController,
-                    decoration:
-                        const InputDecoration(
-                      labelText: 'タイトル',
-                    ),
+                    decoration: const InputDecoration(labelText: 'タイトル'),
                   ),
 
                   TextField(
                     controller: locationController,
-                    decoration:
-                        const InputDecoration(
-                      labelText: '場所',
-                    ),
+                    decoration: const InputDecoration(labelText: '場所'),
                   ),
 
                   ListTile(
-                    leading:
-                        const Icon(Icons.calendar_month),
+                    leading: const Icon(Icons.calendar_month),
                     title: Text(
                       '日付 ${selectedDate.year}/${selectedDate.month}/${selectedDate.day}',
                     ),
                     onTap: () async {
-                      final picked =
-                          await showDatePicker(
+                      final picked = await showDatePicker(
                         context: context,
                         initialDate: selectedDate,
                         firstDate: DateTime(2024),
@@ -72,12 +61,9 @@ Future<void> showEditScheduleDialog(
 
                   ListTile(
                     leading: const Icon(Icons.schedule),
-                    title: Text(
-                      '開始 ${startTime.format(context)}',
-                    ),
+                    title: Text('開始 ${startTime.format(context)}'),
                     onTap: () async {
-                      final picked =
-                          await showTimePicker(
+                      final picked = await showTimePicker(
                         context: context,
                         initialTime: startTime,
                       );
@@ -94,13 +80,11 @@ Future<void> showEditScheduleDialog(
             ),
             actions: [
               TextButton(
-                onPressed: () =>
-                    Navigator.pop(context),
+                onPressed: () => Navigator.pop(context),
                 child: const Text('キャンセル'),
               ),
               ElevatedButton(
-                onPressed: () =>
-                    Navigator.pop(context, true),
+                onPressed: () => Navigator.pop(context, true),
                 child: const Text('保存'),
               ),
             ],
@@ -120,18 +104,16 @@ Future<void> showEditScheduleDialog(
     startTime.minute,
   );
 
-  final end = start.add(
-    Duration(minutes: durationMinutes),
-  );
+  final end = start.add(Duration(minutes: durationMinutes));
 
   await FirebaseFirestore.instance
       .collection('schedules')
       .doc(schedule.id)
       .update({
-    'title': titleController.text,
-    'location': locationController.text,
-    'start': Timestamp.fromDate(start),
-    'end': Timestamp.fromDate(end),
-    'durationMinutes': durationMinutes,
-  });
+        'title': titleController.text,
+        'location': locationController.text,
+        'start': Timestamp.fromDate(start),
+        'end': Timestamp.fromDate(end),
+        'durationMinutes': durationMinutes,
+      });
 }

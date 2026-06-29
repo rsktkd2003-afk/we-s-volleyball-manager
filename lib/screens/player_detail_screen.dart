@@ -5,10 +5,7 @@ import '../services/position_fit_service.dart';
 import '../widgets/ability_radar_chart.dart';
 
 class PlayerDetailScreen extends StatelessWidget {
-  const PlayerDetailScreen({
-    super.key,
-    required this.player,
-  });
+  const PlayerDetailScreen({super.key, required this.player});
 
   final Player player;
 
@@ -48,9 +45,7 @@ class PlayerDetailScreen extends StatelessWidget {
 }
 
 class _BasicTab extends StatelessWidget {
-  const _BasicTab({
-    required this.player,
-  });
+  const _BasicTab({required this.player});
 
   final Player player;
 
@@ -122,9 +117,7 @@ class _BasicTab extends StatelessWidget {
                           width: 40,
                           child: Text(
                             e.key,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                         Expanded(
@@ -148,9 +141,7 @@ class _BasicTab extends StatelessWidget {
 }
 
 class _PhysicalTab extends StatelessWidget {
-  const _PhysicalTab({
-    required this.player,
-  });
+  const _PhysicalTab({required this.player});
 
   final Player player;
 
@@ -159,56 +150,53 @@ class _PhysicalTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-  const Text(
-    '身体データ',
-    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  ),
-  const SizedBox(height: 8),
+        const Text(
+          '身体データ',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
 
-  _InfoTile(label: '身長', value: '${player.height.toStringAsFixed(1)} cm'),
-  _InfoTile(label: '体重', value: '${player.weight.toStringAsFixed(1)} kg'),
-  _InfoTile(
-    label: '指高',
-    value: '${player.standingReach.toStringAsFixed(1)} cm',
-  ),
-  _InfoTile(
-    label: '最高到達点',
-    value: '${player.maxReach.toStringAsFixed(1)} cm',
-  ),
-  _InfoTile(
-    label: 'ブロック到達点',
-    value: '${player.blockReach.toStringAsFixed(1)} cm',
-  ),
-  _InfoTile(
-    label: 'ジャンプ力',
-    value: '${player.jumpHeight.toStringAsFixed(1)} cm',
-  ),
+        _InfoTile(label: '身長', value: '${player.height.toStringAsFixed(1)} cm'),
+        _InfoTile(label: '体重', value: '${player.weight.toStringAsFixed(1)} kg'),
+        _InfoTile(
+          label: '指高',
+          value: '${player.standingReach.toStringAsFixed(1)} cm',
+        ),
+        _InfoTile(
+          label: '最高到達点',
+          value: '${player.maxReach.toStringAsFixed(1)} cm',
+        ),
+        _InfoTile(
+          label: 'ブロック到達点',
+          value: '${player.blockReach.toStringAsFixed(1)} cm',
+        ),
+        _InfoTile(
+          label: 'ジャンプ力',
+          value: '${player.jumpHeight.toStringAsFixed(1)} cm',
+        ),
 
-  const SizedBox(height: 24),
+        const SizedBox(height: 24),
 
-  const Text(
-    '能力パラメーター',
-    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  ),
-  const SizedBox(height: 8),
+        const Text(
+          '能力パラメーター',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
 
-  _InfoTile(label: 'スパイク', value: player.spike.toString()),
-  _InfoTile(label: 'サーブ', value: player.serve.toString()),
-  _InfoTile(label: 'レセプション', value: player.reception.toString()),
-  _InfoTile(label: 'ディグ', value: player.dig.toString()),
-  _InfoTile(label: 'トス', value: player.toss.toString()),
-  _InfoTile(label: 'ブロック', value: player.block.toString()),
-  _InfoTile(label: '機動力', value: player.mobility.toString()),
-],
+        _InfoTile(label: 'スパイク', value: player.spike.toString()),
+        _InfoTile(label: 'サーブ', value: player.serve.toString()),
+        _InfoTile(label: 'レセプション', value: player.reception.toString()),
+        _InfoTile(label: 'ディグ', value: player.dig.toString()),
+        _InfoTile(label: 'トス', value: player.toss.toString()),
+        _InfoTile(label: 'ブロック', value: player.block.toString()),
+        _InfoTile(label: '機動力', value: player.mobility.toString()),
+      ],
     );
   }
 }
 
 class _InfoTile extends StatelessWidget {
-  const _InfoTile({
-    required this.label,
-    required this.value,
-  });
+  const _InfoTile({required this.label, required this.value});
 
   final String label;
   final String value;

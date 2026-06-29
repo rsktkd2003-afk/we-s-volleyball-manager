@@ -1,8 +1,4 @@
-DateTime getRepeatedStart(
-  DateTime base,
-  String repeatType,
-  int index,
-) {
+DateTime getRepeatedStart(DateTime base, String repeatType, int index) {
   switch (repeatType) {
     case '毎日':
       return base.add(Duration(days: index));

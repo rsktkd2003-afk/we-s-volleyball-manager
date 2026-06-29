@@ -2,10 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 class AbilityRadarChart extends StatelessWidget {
-  const AbilityRadarChart({
-    super.key,
-    required this.values,
-  });
+  const AbilityRadarChart({super.key, required this.values});
 
   final Map<String, int> values;
 
@@ -38,7 +35,7 @@ class _RadarChartPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final valuePaint = Paint()
-      ..color = Colors.red.withOpacity(0.35)
+      ..color = Colors.red.withValues(alpha: 0.35)
       ..style = PaintingStyle.fill;
 
     final valueLinePaint = Paint()
@@ -97,10 +94,7 @@ class _RadarChartPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: label,
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 12,
-          ),
+          style: const TextStyle(color: Colors.black, fontSize: 12),
         ),
         textDirection: TextDirection.ltr,
       )..layout();

@@ -61,47 +61,44 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         .orderBy('start')
         .snapshots()
         .listen((snapshot) {
-      if (!mounted) return;
+          if (!mounted) return;
 
-      setState(() {
-        schedules = snapshot.docs
-            .map((doc) => TeamSchedule.fromJson(doc.data(), doc.id))
-            .toList();
-      });
-    });
+          setState(() {
+            schedules = snapshot.docs
+                .map((doc) => TeamSchedule.fromJson(doc.data(), doc.id))
+                .toList();
+          });
+        });
 
     templatesSubscription = db
         .collection('schedule_templates')
         .where('teamId', isEqualTo: teamId)
         .snapshots()
         .listen((snapshot) {
-      if (!mounted) return;
+          if (!mounted) return;
 
-      setState(() {
-        templates = snapshot.docs
-            .map((doc) => ScheduleTemplate.fromJson(doc.data(), doc.id))
-            .toList();
-      });
-    });
+          setState(() {
+            templates = snapshot.docs
+                .map((doc) => ScheduleTemplate.fromJson(doc.data(), doc.id))
+                .toList();
+          });
+        });
 
     playersSubscription = db
         .collection('players')
         .where('teamId', isEqualTo: teamId)
         .snapshots()
         .listen((snapshot) {
-      if (!mounted) return;
+          if (!mounted) return;
 
-      setState(() {
-        players = snapshot.docs.map((doc) {
-          final data = doc.data();
+          setState(() {
+            players = snapshot.docs.map((doc) {
+              final data = doc.data();
 
-          return TeamPlayer(
-            id: doc.id,
-            name: data['name'] ?? '',
-          );
-        }).toList();
-      });
-    });
+              return TeamPlayer(id: doc.id, name: data['name'] ?? '');
+            }).toList();
+          });
+        });
   }
 
   Future<void> loadSchedules() async {
@@ -219,12 +216,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         onPressed: templates.isEmpty
                             ? null
                             : () async {
-                                final deleted =
-                                    await template_delete.showTemplateDeleteDialog(
-                                  context: context,
-                                  templates: templates,
-                                  onDelete: deleteTemplate,
-                                );
+                                final deleted = await template_delete
+                                    .showTemplateDeleteDialog(
+                                      context: context,
+                                      templates: templates,
+                                      onDelete: deleteTemplate,
+                                    );
 
                                 if (deleted == true) {
                                   setDialogState(() {});
@@ -286,7 +283,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         DropdownMenuItem(value: 60, child: Text('所要時間 1時間')),
                         DropdownMenuItem(value: 90, child: Text('所要時間 1時間30分')),
                         DropdownMenuItem(value: 120, child: Text('所要時間 2時間')),
-                        DropdownMenuItem(value: 150, child: Text('所要時間 2時間30分')),
+                        DropdownMenuItem(
+                          value: 150,
+                          child: Text('所要時間 2時間30分'),
+                        ),
                         DropdownMenuItem(value: 180, child: Text('所要時間 3時間')),
                         DropdownMenuItem(value: 240, child: Text('所要時間 4時間')),
                       ],
@@ -365,8 +365,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     if (result != true) return;
 
-    final title =
-        titleController.text.trim().isEmpty ? '予定' : titleController.text.trim();
+    final title = titleController.text.trim().isEmpty
+        ? '予定'
+        : titleController.text.trim();
 
     final location = locationController.text.trim();
 

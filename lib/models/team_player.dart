@@ -1,8 +1,5 @@
 class TeamPlayer {
-  TeamPlayer({
-    required this.id,
-    required this.name,
-  });
+  TeamPlayer({required this.id, required this.name});
 
   final String id;
   final String name;

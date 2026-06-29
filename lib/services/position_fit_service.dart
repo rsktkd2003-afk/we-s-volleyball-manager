@@ -40,20 +40,12 @@ class PositionFitService {
         player.mobility * 0.15 +
         player.serve * 0.10;
 
-    return {
-      'WS': ws,
-      'MB': mb,
-      'S': setter,
-      'OP': op,
-      'L': libero,
-    };
+    return {'WS': ws, 'MB': mb, 'S': setter, 'OP': op, 'L': libero};
   }
 
   static String bestPosition(Player player) {
     final scores = calculate(player);
 
-    return scores.entries
-        .reduce((a, b) => a.value >= b.value ? a : b)
-        .key;
+    return scores.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
   }
 }

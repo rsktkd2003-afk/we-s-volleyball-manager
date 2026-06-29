@@ -7,15 +7,15 @@ import '../models/team_schedule.dart';
 
 class ScheduleDetailSheet extends StatefulWidget {
   const ScheduleDetailSheet({
-  super.key,
-  required this.schedule,
-  required this.players,
-  required this.onEdit,
-});
+    super.key,
+    required this.schedule,
+    required this.players,
+    required this.onEdit,
+  });
 
-final TeamSchedule schedule;
-final List<TeamPlayer> players;
-final void Function(TeamSchedule) onEdit;
+  final TeamSchedule schedule;
+  final List<TeamPlayer> players;
+  final void Function(TeamSchedule) onEdit;
 
   @override
   State<ScheduleDetailSheet> createState() => _ScheduleDetailSheetState();
@@ -41,40 +41,40 @@ class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
   }
 
   Future<void> saveResponse() async {
-  final user = FirebaseAuth.instance.currentUser;
+    final user = FirebaseAuth.instance.currentUser;
 
-  if (user == null || widget.schedule.id == null) {
-    return;
+    if (user == null || widget.schedule.id == null) {
+      return;
+    }
+
+    final currentUid = user.uid;
+
+    final lateTimeText = status == '遅刻'
+        ? lateTimeUnknown
+              ? '未定'
+              : '${lateTime.hour.toString().padLeft(2, '0')}:${lateTime.minute.toString().padLeft(2, '0')}'
+        : '';
+
+    await FirebaseFirestore.instance
+        .collection('schedules')
+        .doc(widget.schedule.id)
+        .collection('responses')
+        .doc(currentUid)
+        .set({
+          'uid': currentUid,
+          'playerId': currentUid,
+          'playerName': user.displayName ?? user.email ?? 'ログインユーザー',
+          'status': status,
+          'lateTime': lateTimeText,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('出欠を保存しました')));
   }
-
-  final currentUid = user.uid;
-
-  final lateTimeText = status == '遅刻'
-      ? lateTimeUnknown
-          ? '未定'
-          : '${lateTime.hour.toString().padLeft(2, '0')}:${lateTime.minute.toString().padLeft(2, '0')}'
-      : '';
-
-  await FirebaseFirestore.instance
-      .collection('schedules')
-      .doc(widget.schedule.id)
-      .collection('responses')
-      .doc(currentUid)
-      .set({
-    'uid': currentUid,
-    'playerId': currentUid,
-    'playerName': user.displayName ?? user.email ?? 'ログインユーザー',
-    'status': status,
-    'lateTime': lateTimeText,
-    'updatedAt': FieldValue.serverTimestamp(),
-  });
-
-  if (!mounted) return;
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('出欠を保存しました')),
-  );
-}
 
   Future<void> deleteMyResponse() async {
     if (uid == null || widget.schedule.id == null) return;
@@ -88,9 +88,9 @@ class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
 
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('自分の出欠を削除しました')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('自分の出欠を削除しました')));
   }
 
   Future<void> deleteSchedule() async {
@@ -98,13 +98,16 @@ class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
     if (scheduleId == null || uid == null) return;
 
     final admin = await isAdmin();
+
+    if (!mounted) return;
+
     final canDelete = admin || widget.schedule.createdBy == uid;
 
     if (!canDelete) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('この予定を削除できるのは作成者か管理者だけです')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('この予定を削除できるのは作成者か管理者だけです')));
       return;
     }
 
@@ -127,6 +130,8 @@ class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
         );
       },
     );
+
+    if (!mounted) return;
 
     if (confirm != true) return;
 
@@ -211,37 +216,38 @@ class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
             ),
 
             if (status == '遅刻')
-  Column(
-    children: [
-      CheckboxListTile(
-        value: lateTimeUnknown,
-        title: const Text('到着時間は未定'),
-        controlAffinity: ListTileControlAffinity.leading,
-        onChanged: (value) {
-          setState(() {
-            lateTimeUnknown = value ?? false;
-          });
-        },
-      ),
-      if (!lateTimeUnknown)
-        ListTile(
-          leading: const Icon(Icons.more_time),
-          title: Text('到着予定 ${lateTime.format(context)}'),
-          onTap: () async {
-            final picked = await showTimePicker(
-              context: context,
-              initialTime: lateTime,
-            );
+              Column(
+                children: [
+                  CheckboxListTile(
+                    value: lateTimeUnknown,
+                    title: const Text('到着時間は未定'),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    onChanged: (value) {
+                      setState(() {
+                        lateTimeUnknown = value ?? false;
+                      });
+                    },
+                  ),
+                  if (!lateTimeUnknown)
+                    ListTile(
+                      leading: const Icon(Icons.more_time),
+                      title: Text('到着予定 ${lateTime.format(context)}'),
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: lateTime,
+                        );
 
-            if (picked == null) return;
+                        if (!mounted) return;
+                        if (picked == null) return;
 
-            setState(() {
-              lateTime = picked;
-            });
-          },
-        ),
-    ],
-  ),
+                        setState(() {
+                          lateTime = picked;
+                        });
+                      },
+                    ),
+                ],
+              ),
 
             const SizedBox(height: 12),
 
@@ -262,18 +268,18 @@ class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
               ),
             ),
             SizedBox(
-  width: double.infinity,
-  child: OutlinedButton.icon(
-    onPressed: () {
-      Navigator.pop(context);
-      widget.onEdit(schedule);
-    },
-    icon: const Icon(Icons.edit),
-    label: const Text('予定を編集'),
-  ),
-),
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.onEdit(schedule);
+                },
+                icon: const Icon(Icons.edit),
+                label: const Text('予定を編集'),
+              ),
+            ),
 
-const SizedBox(height: 8),
+            const SizedBox(height: 8),
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
@@ -334,24 +340,15 @@ const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
-                          child: _CountCard(
-                            label: '参加',
-                            count: presentCount,
-                          ),
+                          child: _CountCard(label: '参加', count: presentCount),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: _CountCard(
-                            label: '遅刻',
-                            count: lateCount,
-                          ),
+                          child: _CountCard(label: '遅刻', count: lateCount),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: _CountCard(
-                            label: '欠席',
-                            count: absentCount,
-                          ),
+                          child: _CountCard(label: '欠席', count: absentCount),
                         ),
                       ],
                     ),
@@ -429,10 +426,7 @@ class _StatusButton extends StatelessWidget {
 }
 
 class _CountCard extends StatelessWidget {
-  const _CountCard({
-    required this.label,
-    required this.count,
-  });
+  const _CountCard({required this.label, required this.count});
 
   final String label;
   final int count;
@@ -444,15 +438,9 @@ class _CountCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
           children: [
-            Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            Text(
-              '$count人',
-              style: const TextStyle(fontSize: 18),
-            ),
+            Text('$count人', style: const TextStyle(fontSize: 18)),
           ],
         ),
       ),

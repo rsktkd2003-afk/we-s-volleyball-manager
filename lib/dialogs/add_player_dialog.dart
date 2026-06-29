@@ -10,9 +10,7 @@ Future<String?> showAddPlayerDialog(BuildContext context) async {
         title: const Text('Add Player'),
         content: TextField(
           controller: nameController,
-          decoration: const InputDecoration(
-            hintText: 'Player name',
-          ),
+          decoration: const InputDecoration(hintText: 'Player name'),
         ),
         actions: [
           TextButton(

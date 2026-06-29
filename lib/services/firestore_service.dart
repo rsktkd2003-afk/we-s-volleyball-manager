@@ -15,10 +15,7 @@ class FirestoreService {
     final snapshot = await playersRef.get();
 
     return snapshot.docs
-        .map((doc) => Player.fromJson({
-              ...doc.data(),
-              'id': doc.id,
-            }))
+        .map((doc) => Player.fromJson({...doc.data(), 'id': doc.id}))
         .toList();
   }
 
@@ -38,10 +35,7 @@ class FirestoreService {
     final snapshot = await practicesRef.get();
 
     return snapshot.docs
-        .map((doc) => Practice.fromJson({
-              ...doc.data(),
-              'id': doc.id,
-            }))
+        .map((doc) => Practice.fromJson({...doc.data(), 'id': doc.id}))
         .toList();
   }
 

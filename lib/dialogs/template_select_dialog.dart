@@ -41,9 +41,7 @@ Future<PracticeTemplate?> showTemplateSelectDialog(
                                 builder: (context) {
                                   return AlertDialog(
                                     title: const Text('テンプレートを削除'),
-                                    content: Text(
-                                      '「${template.name}」を削除しますか？',
-                                    ),
+                                    content: Text('「${template.name}」を削除しますか？'),
                                     actions: [
                                       TextButton(
                                         onPressed: () {

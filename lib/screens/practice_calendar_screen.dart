@@ -6,10 +6,7 @@ import '../models/practice.dart';
 class PracticeCalendarScreen extends StatefulWidget {
   final List<Practice> practices;
 
-  const PracticeCalendarScreen({
-    super.key,
-    required this.practices,
-  });
+  const PracticeCalendarScreen({super.key, required this.practices});
 
   @override
   State<PracticeCalendarScreen> createState() => _PracticeCalendarScreenState();
@@ -33,9 +30,7 @@ class _PracticeCalendarScreenState extends State<PracticeCalendarScreen> {
     final selectedPractices = getPracticesForDay(selectedDay ?? focusedDay);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('練習カレンダー'),
-      ),
+      appBar: AppBar(title: const Text('練習カレンダー')),
       body: Column(
         children: [
           TableCalendar<Practice>(
@@ -53,9 +48,7 @@ class _PracticeCalendarScreenState extends State<PracticeCalendarScreen> {
               });
             },
             calendarStyle: const CalendarStyle(
-              markerDecoration: BoxDecoration(
-                shape: BoxShape.circle,
-              ),
+              markerDecoration: BoxDecoration(shape: BoxShape.circle),
             ),
           ),
           const SizedBox(height: 8),
@@ -69,7 +62,9 @@ class _PracticeCalendarScreenState extends State<PracticeCalendarScreen> {
 
                       return ListTile(
                         leading: const Icon(Icons.event),
-                        title: Text('${practice.type} / ${practice.startTime}〜'),
+                        title: Text(
+                          '${practice.type} / ${practice.startTime}〜',
+                        ),
                         subtitle: Text('所要時間: ${practice.durationMinutes}分'),
                       );
                     },

@@ -38,9 +38,7 @@ class Practice {
       startTime: json['startTime'] ?? '19:00',
       durationMinutes: json['durationMinutes'] ?? 120,
       type: json['type'] ?? '全体練習',
-      attendance: Map<String, dynamic>.from(
-        json['attendance'] ?? {},
-      ),
+      attendance: Map<String, dynamic>.from(json['attendance'] ?? {}),
     );
   }
 }
