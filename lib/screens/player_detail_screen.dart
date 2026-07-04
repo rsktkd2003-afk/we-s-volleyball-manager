@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/player.dart';
 import '../services/position_fit_service.dart';
 import '../widgets/ability_radar_chart.dart';
+import '../widgets/player_issue_section.dart';
 
 class PlayerDetailScreen extends StatelessWidget {
   const PlayerDetailScreen({super.key, required this.player});
@@ -12,7 +13,7 @@ class PlayerDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: Text(player.name),
@@ -20,6 +21,7 @@ class PlayerDetailScreen extends StatelessWidget {
             tabs: [
               Tab(text: '基本'),
               Tab(text: '身体'),
+              Tab(text: '改善点'),
             ],
           ),
           actions: [
@@ -37,6 +39,7 @@ class PlayerDetailScreen extends StatelessWidget {
           children: [
             _BasicTab(player: player),
             _PhysicalTab(player: player),
+            PlayerIssueSection(player: player),
           ],
         ),
       ),
@@ -62,14 +65,11 @@ class _BasicTab extends StatelessWidget {
         _InfoTile(label: 'ポジション', value: player.position),
         _InfoTile(label: '利き手', value: player.dominantHand),
         _InfoTile(label: '学年', value: player.grade),
-
         const SizedBox(height: 24),
-
         const Text(
           '能力値レーダー',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -86,14 +86,11 @@ class _BasicTab extends StatelessWidget {
             ),
           ),
         ),
-
         const SizedBox(height: 24),
-
         const Text(
           'ポジション適性',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -155,7 +152,6 @@ class _PhysicalTab extends StatelessWidget {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-
         _InfoTile(label: '身長', value: '${player.height.toStringAsFixed(1)} cm'),
         _InfoTile(label: '体重', value: '${player.weight.toStringAsFixed(1)} kg'),
         _InfoTile(
@@ -174,15 +170,12 @@ class _PhysicalTab extends StatelessWidget {
           label: 'ジャンプ力',
           value: '${player.jumpHeight.toStringAsFixed(1)} cm',
         ),
-
         const SizedBox(height: 24),
-
         const Text(
           '能力パラメーター',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-
         _InfoTile(label: 'スパイク', value: player.spike.toString()),
         _InfoTile(label: 'サーブ', value: player.serve.toString()),
         _InfoTile(label: 'レセプション', value: player.reception.toString()),

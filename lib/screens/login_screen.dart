@@ -10,6 +10,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // TODO: ここを自分のteamIdに変更
+  static const String defaultTeamId = 'wes';
+
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
@@ -24,35 +27,31 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      UserCredential credential;
+
       if (isRegisterMode) {
-        final credential = await FirebaseAuth.instance
-            .createUserWithEmailAndPassword(
-              email: emailController.text.trim(),
-              password: passwordController.text.trim(),
-            );
-
-        final user = credential.user;
-
-        if (user != null) {
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .set({
-                'email': user.email,
-                'role': 'member',
-                'playerId': '',
-                'createdAt': FieldValue.serverTimestamp(),
-              });
-        }
+        credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: emailController.text.trim(),
+          password: passwordController.text.trim(),
+        );
       } else {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
+        credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: emailController.text.trim(),
           password: passwordController.text.trim(),
         );
       }
+
+      final user = credential.user;
+      if (user != null) {
+        await ensureUserDocument(user);
+      }
     } on FirebaseAuthException catch (e) {
       setState(() {
         errorMessage = convertErrorMessage(e);
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'エラーが発生しました: $e';
       });
     } finally {
       if (mounted) {
@@ -61,6 +60,52 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
+  }
+
+  Future<void> ensureUserDocument(User user) async {
+    final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      await userRef.set({
+        'email': user.email,
+        'displayName': user.displayName ?? '',
+        'teamId': defaultTeamId,
+        'role': 'member',
+        'playerId': null,
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return;
+    }
+
+    final data = userDoc.data() ?? {};
+
+    final updates = <String, dynamic>{
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+
+    if (!data.containsKey('email')) {
+      updates['email'] = user.email;
+    }
+
+    if (!data.containsKey('displayName')) {
+      updates['displayName'] = user.displayName ?? '';
+    }
+
+    if (!data.containsKey('teamId')) {
+      updates['teamId'] = defaultTeamId;
+    }
+
+    if (!data.containsKey('role')) {
+      updates['role'] = 'member';
+    }
+
+    if (!data.containsKey('playerId') || data['playerId'] == '') {
+      updates['playerId'] = null;
+    }
+
+    await userRef.set(updates, SetOptions(merge: true));
   }
 
   String convertErrorMessage(FirebaseAuthException e) {

@@ -1,21 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/firestore_service.dart';
+import 'features/practice/player_link/player_link_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  runApp(const MyApp());
+  runApp(
+  const ProviderScope(
+    child: MyApp(),
+  ),
+);
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  Future<Widget> _resolveHomeAfterLogin() async {
+    final userData = await FirestoreService.loadCurrentUserData();
+
+    if (userData == null) {
+      return const LoginScreen();
+    }
+
+    final role = userData['role'] as String? ?? 'member';
+    final playerId = userData['playerId'] as String?;
+
+    if (role == 'member' && (playerId == null || playerId.isEmpty)) {
+      return const PlayerLinkScreen();
+    }
+
+    return const HomeScreen();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,18 +52,37 @@ class MyApp extends StatelessWidget {
       ),
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+        builder: (context, authSnapshot) {
+          if (authSnapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             );
           }
 
-          if (snapshot.hasData) {
-            return const HomeScreen();
+          if (!authSnapshot.hasData) {
+            return const LoginScreen();
           }
 
-          return const LoginScreen();
+          return FutureBuilder<Widget>(
+            future: _resolveHomeAfterLogin(),
+            builder: (context, homeSnapshot) {
+              if (homeSnapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              if (homeSnapshot.hasError) {
+                return Scaffold(
+                  body: Center(
+                    child: Text('ユーザー情報の読み込みに失敗しました: ${homeSnapshot.error}'),
+                  ),
+                );
+              }
+
+              return homeSnapshot.data ?? const LoginScreen();
+            },
+          );
         },
       ),
     );

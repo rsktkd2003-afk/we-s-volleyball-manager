@@ -2,20 +2,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/team_schedule.dart';
+import '../repositories/schedule_repository.dart';
 
 Future<void> showEditScheduleDialog(
   BuildContext context,
   TeamSchedule schedule,
 ) async {
   final titleController = TextEditingController(text: schedule.title);
-
   final locationController = TextEditingController(text: schedule.location);
 
   DateTime selectedDate = schedule.start;
-
   TimeOfDay startTime = TimeOfDay.fromDateTime(schedule.start);
-
-  int durationMinutes = schedule.durationMinutes;
+  final int durationMinutes = schedule.durationMinutes;
 
   final result = await showDialog<bool>(
     context: context,
@@ -32,12 +30,10 @@ Future<void> showEditScheduleDialog(
                     controller: titleController,
                     decoration: const InputDecoration(labelText: 'タイトル'),
                   ),
-
                   TextField(
                     controller: locationController,
                     decoration: const InputDecoration(labelText: '場所'),
                   ),
-
                   ListTile(
                     leading: const Icon(Icons.calendar_month),
                     title: Text(
@@ -51,14 +47,10 @@ Future<void> showEditScheduleDialog(
                         lastDate: DateTime(2035),
                       );
 
-                      if (picked != null) {
-                        setDialogState(() {
-                          selectedDate = picked;
-                        });
-                      }
+                      if (picked == null) return;
+                      setDialogState(() => selectedDate = picked);
                     },
                   ),
-
                   ListTile(
                     leading: const Icon(Icons.schedule),
                     title: Text('開始 ${startTime.format(context)}'),
@@ -68,11 +60,8 @@ Future<void> showEditScheduleDialog(
                         initialTime: startTime,
                       );
 
-                      if (picked != null) {
-                        setDialogState(() {
-                          startTime = picked;
-                        });
-                      }
+                      if (picked == null) return;
+                      setDialogState(() => startTime = picked);
                     },
                   ),
                 ],
@@ -94,7 +83,7 @@ Future<void> showEditScheduleDialog(
     },
   );
 
-  if (result != true) return;
+  if (result != true || schedule.id == null) return;
 
   final start = DateTime(
     selectedDate.year,
@@ -104,16 +93,11 @@ Future<void> showEditScheduleDialog(
     startTime.minute,
   );
 
-  final end = start.add(Duration(minutes: durationMinutes));
-
-  await FirebaseFirestore.instance
-      .collection('schedules')
-      .doc(schedule.id)
-      .update({
-        'title': titleController.text,
-        'location': locationController.text,
-        'start': Timestamp.fromDate(start),
-        'end': Timestamp.fromDate(end),
-        'durationMinutes': durationMinutes,
-      });
+  await ScheduleRepository.updateSchedule(schedule.id!, {
+    'title': titleController.text,
+    'location': locationController.text,
+    'start': Timestamp.fromDate(start),
+    'end': Timestamp.fromDate(start.add(Duration(minutes: durationMinutes))),
+    'durationMinutes': durationMinutes,
+  });
 }

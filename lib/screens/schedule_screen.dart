@@ -6,14 +6,21 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../datasources/team_schedule_data_source.dart';
+import '../dialogs/add_schedule_dialog.dart';
+import '../dialogs/schedule_edit_dialog.dart';
 import '../models/schedule_template.dart';
 import '../models/team_player.dart';
 import '../models/team_schedule.dart';
-import '../widgets/schedule_detail_sheet.dart';
-import '../utils/schedule_utils.dart';
-import '../dialogs/schedule_edit_dialog.dart';
-import '../dialogs/template_delete_dialog.dart' as template_delete;
+import '../repositories/schedule_repository.dart';
+import '../services/firestore_service.dart';
 import '../services/team_service.dart';
+import '../utils/schedule_utils.dart';
+import '../widgets/bulletin_sticky_area.dart';
+import '../widgets/cork_board_background.dart';
+import '../widgets/match_poll_entry_card.dart';
+import '../widgets/pinned_paper_card.dart';
+import '../widgets/schedule_detail_sheet.dart';
+import '../widgets/wes_fab.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -23,391 +30,140 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
-  final db = FirebaseFirestore.instance;
-
   List<TeamSchedule> schedules = [];
   List<ScheduleTemplate> templates = [];
   List<TeamPlayer> players = [];
 
-  StreamSubscription? schedulesSubscription;
-  StreamSubscription? templatesSubscription;
-  StreamSubscription? playersSubscription;
+  StreamSubscription? _schedulesSub;
+  StreamSubscription? _templatesSub;
+  StreamSubscription? _playersSub;
 
-  String? teamId;
+  bool isAdmin = false;
+
+  DateTime _visibleMonth =
+      DateTime(DateTime.now().year, DateTime.now().month);
 
   @override
   void initState() {
     super.initState();
-    initTeam();
-  }
-
-  Future<void> initTeam() async {
-    teamId = await TeamService.getCurrentTeamId();
-    listenAll();
+    _init();
   }
 
   @override
   void dispose() {
-    schedulesSubscription?.cancel();
-    templatesSubscription?.cancel();
-    playersSubscription?.cancel();
+    _schedulesSub?.cancel();
+    _templatesSub?.cancel();
+    _playersSub?.cancel();
     super.dispose();
   }
 
-  void listenAll() {
-    schedulesSubscription = db
-        .collection('schedules')
-        .where('teamId', isEqualTo: teamId)
-        .orderBy('start')
-        .snapshots()
-        .listen((snapshot) {
-          if (!mounted) return;
+  Future<void> _init() async {
+    final teamId = await TeamService.getCurrentTeamId();
+    final admin = await FirestoreService.isCurrentUserAdmin();
 
-          setState(() {
-            schedules = snapshot.docs
-                .map((doc) => TeamSchedule.fromJson(doc.data(), doc.id))
-                .toList();
-          });
-        });
+    if (!mounted) return;
+    setState(() => isAdmin = admin);
+    _listenAll(teamId);
+  }
 
-    templatesSubscription = db
-        .collection('schedule_templates')
-        .where('teamId', isEqualTo: teamId)
-        .snapshots()
-        .listen((snapshot) {
-          if (!mounted) return;
+  void _listenAll(String teamId) {
+    _schedulesSub = ScheduleRepository.watchSchedules().listen(
+      (list) {
+        if (mounted) setState(() => schedules = list);
+      },
+      onError: _showStreamError,
+    );
 
-          setState(() {
-            templates = snapshot.docs
-                .map((doc) => ScheduleTemplate.fromJson(doc.data(), doc.id))
-                .toList();
-          });
-        });
+    _templatesSub = ScheduleRepository.watchTemplates().listen(
+      (list) {
+        if (mounted) setState(() => templates = list);
+      },
+      onError: _showStreamError,
+    );
 
-    playersSubscription = db
+    _playersSub = FirebaseFirestore.instance
         .collection('players')
         .where('teamId', isEqualTo: teamId)
         .snapshots()
-        .listen((snapshot) {
-          if (!mounted) return;
+        .listen(
+          (snapshot) {
+            if (!mounted) return;
 
-          setState(() {
-            players = snapshot.docs.map((doc) {
-              final data = doc.data();
-
-              return TeamPlayer(id: doc.id, name: data['name'] ?? '');
-            }).toList();
-          });
-        });
+            setState(() {
+              players = snapshot.docs
+                  .map(
+                    (doc) => TeamPlayer(
+                      id: doc.id,
+                      name: doc.data()['name'] ?? '',
+                    ),
+                  )
+                  .toList();
+            });
+          },
+          onError: _showStreamError,
+        );
   }
 
-  Future<void> loadSchedules() async {
-    final snapshot = await db
-        .collection('schedules')
-        .where('teamId', isEqualTo: teamId)
-        .orderBy('start')
-        .get();
+  void _showStreamError(Object error) {
+    debugPrint('ScheduleScreen stream error: $error');
+    if (!mounted) return;
 
-    setState(() {
-      schedules = snapshot.docs
-          .map((doc) => TeamSchedule.fromJson(doc.data(), doc.id))
-          .toList();
-    });
-  }
-
-  Future<void> addSchedule(TeamSchedule schedule) async {
-    await db.collection('schedules').add({
-      ...schedule.toJson(),
-      'teamId': teamId,
-    });
-  }
-
-  Future<void> addTemplate(ScheduleTemplate template) async {
-    await db.collection('schedule_templates').add({
-      ...template.toJson(),
-      'teamId': teamId,
-    });
-  }
-
-  Future<void> deleteTemplate(ScheduleTemplate template) async {
-    if (template.id == null) return;
-
-    await db.collection('schedule_templates').doc(template.id).delete();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SfCalendar(
-        view: CalendarView.month,
-        firstDayOfWeek: 1,
-        todayHighlightColor: Colors.blue,
-        dataSource: TeamScheduleDataSource(schedules),
-        monthViewSettings: const MonthViewSettings(
-          appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
-          showAgenda: true,
-        ),
-        appointmentTextStyle: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-        ),
-        onTap: (details) {
-          if (details.appointments == null || details.appointments!.isEmpty) {
-            return;
-          }
-
-          final schedule = details.appointments!.first as TeamSchedule;
-          showScheduleDetail(schedule);
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: showAddScheduleDialog,
-        child: const Icon(Icons.add),
-      ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('データの取得に失敗しました: $error')),
     );
   }
 
-  Future<void> showAddScheduleDialog() async {
-    final titleController = TextEditingController();
-    final locationController = TextEditingController();
+  Future<void> _reloadSchedules() async {
+    final loaded = await ScheduleRepository.fetchSchedules();
+    if (!mounted) return;
+    setState(() => schedules = loaded);
+  }
 
-    DateTime selectedDate = DateTime.now();
-    TimeOfDay startTime = const TimeOfDay(hour: 18, minute: 0);
-    int durationMinutes = 180;
-    bool saveAsTemplate = false;
-    String repeatType = '単発';
-    int count = 1;
+  Future<void> _addSchedules(AddScheduleInput input) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
 
-    final result = await showDialog<bool>(
+    for (int i = 0; i < input.count; i++) {
+      final start = getRepeatedStart(input.start, input.repeatType, i);
+
+      await ScheduleRepository.addSchedule(
+        TeamSchedule(
+          title: input.title,
+          location: input.location,
+          start: start,
+          end: start.add(Duration(minutes: input.durationMinutes)),
+          durationMinutes: input.durationMinutes,
+          color: Colors.blue,
+          createdBy: uid,
+        ),
+      );
+    }
+
+    if (input.saveAsTemplate) {
+      await ScheduleRepository.addTemplate(
+        ScheduleTemplate(
+          title: input.title,
+          location: input.location,
+          durationMinutes: input.durationMinutes,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onAddPressed() async {
+    final input = await showAddScheduleDialog(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('予定追加'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (templates.isNotEmpty)
-                      DropdownButton<ScheduleTemplate>(
-                        isExpanded: true,
-                        hint: const Text('テンプレートを選択'),
-                        items: templates.map((template) {
-                          return DropdownMenuItem(
-                            value: template,
-                            child: Text(template.title),
-                          );
-                        }).toList(),
-                        onChanged: (template) {
-                          if (template == null) return;
-
-                          setDialogState(() {
-                            titleController.text = template.title;
-                            locationController.text = template.location;
-                            durationMinutes = template.durationMinutes;
-                          });
-                        },
-                      ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: templates.isEmpty
-                            ? null
-                            : () async {
-                                final deleted = await template_delete
-                                    .showTemplateDeleteDialog(
-                                      context: context,
-                                      templates: templates,
-                                      onDelete: deleteTemplate,
-                                    );
-
-                                if (deleted == true) {
-                                  setDialogState(() {});
-                                }
-                              },
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text('テンプレート削除'),
-                      ),
-                    ),
-                    TextField(
-                      controller: titleController,
-                      decoration: const InputDecoration(labelText: 'タイトル'),
-                    ),
-                    TextField(
-                      controller: locationController,
-                      decoration: const InputDecoration(labelText: '場所'),
-                    ),
-                    const SizedBox(height: 12),
-                    ListTile(
-                      leading: const Icon(Icons.calendar_month),
-                      title: Text(
-                        '日付 ${selectedDate.year}/${selectedDate.month}/${selectedDate.day}',
-                      ),
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDate,
-                          firstDate: DateTime(2024),
-                          lastDate: DateTime(2035),
-                        );
-
-                        if (picked == null) return;
-
-                        setDialogState(() {
-                          selectedDate = picked;
-                        });
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.schedule),
-                      title: Text('開始 ${startTime.format(context)}'),
-                      onTap: () async {
-                        final picked = await showTimePicker(
-                          context: context,
-                          initialTime: startTime,
-                        );
-
-                        if (picked == null) return;
-
-                        setDialogState(() {
-                          startTime = picked;
-                        });
-                      },
-                    ),
-                    DropdownButton<int>(
-                      value: durationMinutes,
-                      isExpanded: true,
-                      items: const [
-                        DropdownMenuItem(value: 60, child: Text('所要時間 1時間')),
-                        DropdownMenuItem(value: 90, child: Text('所要時間 1時間30分')),
-                        DropdownMenuItem(value: 120, child: Text('所要時間 2時間')),
-                        DropdownMenuItem(
-                          value: 150,
-                          child: Text('所要時間 2時間30分'),
-                        ),
-                        DropdownMenuItem(value: 180, child: Text('所要時間 3時間')),
-                        DropdownMenuItem(value: 240, child: Text('所要時間 4時間')),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) return;
-
-                        setDialogState(() {
-                          durationMinutes = value;
-                        });
-                      },
-                    ),
-                    DropdownButton<String>(
-                      value: repeatType,
-                      isExpanded: true,
-                      items: const [
-                        DropdownMenuItem(value: '単発', child: Text('単発')),
-                        DropdownMenuItem(value: '毎日', child: Text('毎日')),
-                        DropdownMenuItem(value: '毎週', child: Text('毎週')),
-                        DropdownMenuItem(value: '毎月', child: Text('毎月')),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) return;
-
-                        setDialogState(() {
-                          repeatType = value;
-                        });
-                      },
-                    ),
-                    DropdownButton<int>(
-                      value: count,
-                      isExpanded: true,
-                      items: List.generate(20, (index) {
-                        final value = index + 1;
-
-                        return DropdownMenuItem(
-                          value: value,
-                          child: Text('作成回数 $value回'),
-                        );
-                      }),
-                      onChanged: (value) {
-                        if (value == null) return;
-
-                        setDialogState(() {
-                          count = value;
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      value: saveAsTemplate,
-                      title: const Text('テンプレートとして保存'),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      onChanged: (value) {
-                        setDialogState(() {
-                          saveAsTemplate = value ?? false;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('キャンセル'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('追加'),
-                ),
-              ],
-            );
-          },
-        );
+      templates: templates,
+      onDeleteTemplate: (template) async {
+        if (template.id == null) return;
+        await ScheduleRepository.deleteTemplate(template.id!);
       },
     );
 
-    if (result != true) return;
-
-    final title = titleController.text.trim().isEmpty
-        ? '予定'
-        : titleController.text.trim();
-
-    final location = locationController.text.trim();
-
-    final start = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-      startTime.hour,
-      startTime.minute,
-    );
-
-    for (int i = 0; i < count; i++) {
-      final repeatedStart = getRepeatedStart(start, repeatType, i);
-      final repeatedEnd = repeatedStart.add(Duration(minutes: durationMinutes));
-
-      await addSchedule(
-        TeamSchedule(
-          title: title,
-          location: location,
-          start: repeatedStart,
-          end: repeatedEnd,
-          durationMinutes: durationMinutes,
-          color: Colors.blue,
-          createdBy: FirebaseAuth.instance.currentUser?.uid,
-        ),
-      );
-    }
-
-    if (saveAsTemplate) {
-      await addTemplate(
-        ScheduleTemplate(
-          title: title,
-          location: location,
-          durationMinutes: durationMinutes,
-        ),
-      );
-    }
+    if (input == null) return;
+    await _addSchedules(input);
   }
 
-  Future<void> showScheduleDetail(TeamSchedule schedule) async {
+  Future<void> _showScheduleDetail(TeamSchedule schedule) async {
     if (schedule.id == null) return;
 
     final shouldReload = await showModalBottomSheet<bool>(
@@ -423,7 +179,70 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
 
     if (shouldReload == true) {
-      await loadSchedules();
+      await _reloadSchedules();
     }
+  }
+
+  void _onCalendarViewChanged(ViewChangedDetails details) {
+    final dates = details.visibleDates;
+    if (dates.isEmpty) return;
+
+    final mid = dates[dates.length ~/ 2];
+    final newMonth = DateTime(mid.year, mid.month);
+
+    if (newMonth != _visibleMonth) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _visibleMonth = newMonth);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: CorkBoardBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              BulletinStickyArea(
+                visibleMonth: _visibleMonth,
+                isAdmin: isAdmin,
+              ),
+              const MatchPollEntryCard(),
+
+              Expanded(
+                child: PinnedPaperCard(
+                  child: SfCalendar(
+                    view: CalendarView.month,
+                    firstDayOfWeek: 1,
+                    todayHighlightColor: const Color(0xFFD32F2F),
+                    dataSource: TeamScheduleDataSource(schedules),
+                    onViewChanged: _onCalendarViewChanged,
+                    monthViewSettings: const MonthViewSettings(
+                      appointmentDisplayMode:
+                          MonthAppointmentDisplayMode.appointment,
+                      showAgenda: true,
+                    ),
+                    appointmentTextStyle: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    onTap: (details) {
+                      final tapped = details.appointments;
+                      if (tapped == null || tapped.isEmpty) return;
+
+                      _showScheduleDetail(tapped.first as TeamSchedule);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton:
+          WesFab(onPressed: _onAddPressed, tooltip: '予定を追加'),
+    );
   }
 }

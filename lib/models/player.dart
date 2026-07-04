@@ -1,6 +1,11 @@
 class Player {
   String id;
 
+  // チーム・権限
+  String teamId;
+  String ownerUid;
+  String? linkedUid;
+
   // 基本情報
   String name;
   int number;
@@ -33,6 +38,9 @@ class Player {
 
   Player({
     this.id = '',
+    this.teamId = '',
+    this.ownerUid = '',
+    this.linkedUid,
     required this.name,
     required this.number,
     required this.position,
@@ -50,8 +58,6 @@ class Player {
     this.toss = 5,
     this.block = 5,
     this.mobility = 5,
-
-    // 追加
     this.jump = 5,
     this.power = 5,
     this.speed = 5,
@@ -61,8 +67,13 @@ class Player {
 
   double get jumpHeight => maxReach - standingReach;
 
+  bool get isLinked => linkedUid != null && linkedUid!.isNotEmpty;
+
   Map<String, dynamic> toJson() {
     return {
+      'teamId': teamId,
+      'ownerUid': ownerUid,
+      'linkedUid': linkedUid,
       'name': name,
       'number': number,
       'position': position,
@@ -80,8 +91,6 @@ class Player {
       'toss': toss,
       'block': block,
       'mobility': mobility,
-
-      // 追加
       'jump': jump,
       'power': power,
       'speed': speed,
@@ -93,6 +102,9 @@ class Player {
   factory Player.fromJson(Map<String, dynamic> json, {String id = ''}) {
     return Player(
       id: id,
+      teamId: json['teamId'] ?? '',
+      ownerUid: json['ownerUid'] ?? '',
+      linkedUid: json['linkedUid'],
       name: json['name'] ?? '',
       number: json['number'] ?? 0,
       position: json['position'] ?? '未設定',
@@ -110,8 +122,6 @@ class Player {
       toss: json['toss'] ?? 5,
       block: json['block'] ?? 5,
       mobility: json['mobility'] ?? 5,
-
-      // 追加
       jump: json['jump'] ?? 5,
       power: json['power'] ?? 5,
       speed: json['speed'] ?? 5,

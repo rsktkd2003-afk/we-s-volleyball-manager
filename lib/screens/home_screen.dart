@@ -1,16 +1,21 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 import '../dialogs/add_player_dialog.dart';
 import '../models/player.dart';
-import '../widgets/player_list.dart';
-import 'player_detail_screen.dart';
-import 'schedule_screen.dart';
-import 'player_edit_screen.dart';
 import '../services/team_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../widgets/cork_board_background.dart';
+import '../widgets/player_filter_bar.dart';
+import '../widgets/player_list.dart';
+import '../widgets/wes_app_bar.dart';
+import '../widgets/wes_bottom_nav.dart';
+import '../widgets/wes_fab.dart';
+import 'player_detail_screen.dart';
+import 'player_edit_screen.dart';
+import 'schedule_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,6 +44,12 @@ class _HomeScreenState extends State<HomeScreen> {
     initTeam();
   }
 
+  @override
+  void dispose() {
+    playersSubscription?.cancel();
+    super.dispose();
+  }
+
   Future<void> initTeam() async {
     teamId = await TeamService.getCurrentTeamId();
     if (!mounted) return;
@@ -50,21 +61,20 @@ class _HomeScreenState extends State<HomeScreen> {
         .collection('players')
         .where('teamId', isEqualTo: teamId)
         .snapshots()
-        .listen((snapshot) {
-          if (!mounted) return;
+        .listen(
+          (snapshot) {
+            if (!mounted) return;
 
-          setState(() {
-            players = snapshot.docs.map((doc) {
-              return Player.fromJson(doc.data(), id: doc.id);
-            }).toList();
-          });
-        });
-  }
-
-  @override
-  void dispose() {
-    playersSubscription?.cancel();
-    super.dispose();
+            setState(() {
+              players = snapshot.docs
+                  .map((doc) => Player.fromJson(doc.data(), id: doc.id))
+                  .toList();
+            });
+          },
+          onError: (error) {
+            debugPrint('HomeScreen players stream error: $error');
+          },
+        );
   }
 
   List<Player> getFilteredPlayers() {
@@ -78,12 +88,13 @@ class _HomeScreenState extends State<HomeScreen> {
       result = result.where((p) => p.position == selectedPosition).toList();
     }
 
-    if (sortType == '背番号') {
-      result.sort((a, b) => a.number.compareTo(b.number));
-    } else if (sortType == '学年') {
-      result.sort((a, b) => a.grade.compareTo(b.grade));
-    } else if (sortType == '名前') {
-      result.sort((a, b) => a.name.compareTo(b.name));
+    switch (sortType) {
+      case '背番号':
+        result.sort((a, b) => a.number.compareTo(b.number));
+      case '学年':
+        result.sort((a, b) => a.grade.compareTo(b.grade));
+      case '名前':
+        result.sort((a, b) => a.name.compareTo(b.name));
     }
 
     return result;
@@ -139,122 +150,43 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (context) => PlayerEditScreen(player: player),
         ),
       );
-      return;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(isPlayerTab ? '選手' : '予定')),
-      body: isPlayerTab
-          ? Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: selectedGrade,
-                              decoration: const InputDecoration(
-                                labelText: '学年',
-                                border: OutlineInputBorder(),
-                              ),
-                              items:
-                                  ['全員', '1年', '2年', '3年', '4年', '社会人', '未設定']
-                                      .map(
-                                        (grade) => DropdownMenuItem(
-                                          value: grade,
-                                          child: Text(grade),
-                                        ),
-                                      )
-                                      .toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedGrade = value!;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: selectedPosition,
-                              decoration: const InputDecoration(
-                                labelText: 'ポジション',
-                                border: OutlineInputBorder(),
-                              ),
-                              items: ['全員', 'S', 'WS', 'MB', 'OP', 'L', '未設定']
-                                  .map(
-                                    (position) => DropdownMenuItem(
-                                      value: position,
-                                      child: Text(position),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedPosition = value!;
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        initialValue: sortType,
-                        decoration: const InputDecoration(
-                          labelText: '並び順',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: ['背番号', '学年', '名前']
-                            .map(
-                              (sort) => DropdownMenuItem(
-                                value: sort,
-                                child: Text(sort),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            sortType = value!;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: PlayerList(
-                    players: getFilteredPlayers(),
-                    onTap: openPlayerDetail,
-                  ),
-                ),
-              ],
-            )
-          : const ScheduleScreen(),
+      appBar: const WesAppBar(unreadCount: 0),
+      body: isPlayerTab ? _buildPlayerTab() : const ScheduleScreen(),
       floatingActionButton: isPlayerTab
-          ? FloatingActionButton(
-              onPressed: addPlayer,
-              child: const Icon(Icons.add),
-            )
+          ? WesFab(onPressed: addPlayer, tooltip: '選手を追加')
           : null,
-      bottomNavigationBar: BottomNavigationBar(
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: WesBottomNav(
         currentIndex: currentIndex,
-        onTap: (index) {
-          setState(() {
-            currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: '選手'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month),
-            label: '予定',
+        onTap: (index) => setState(() => currentIndex = index),
+      ),
+    );
+  }
+
+  Widget _buildPlayerTab() {
+    return CorkBoardBackground(
+      child: Column(
+        children: [
+          PlayerFilterBar(
+            grade: selectedGrade,
+            position: selectedPosition,
+            sortType: sortType,
+            onGradeChanged: (value) => setState(() => selectedGrade = value),
+            onPositionChanged: (value) =>
+                setState(() => selectedPosition = value),
+            onSortChanged: (value) => setState(() => sortType = value),
+          ),
+          Expanded(
+            child: PlayerList(
+              players: getFilteredPlayers(),
+              onTap: openPlayerDetail,
+            ),
           ),
         ],
       ),
