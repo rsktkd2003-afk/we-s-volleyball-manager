@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -31,6 +32,13 @@ class ScheduleScreen extends StatefulWidget {
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
   List<TeamSchedule> schedules = [];
+
+  // SfCalendar のデータソースは1インスタンスを保持し、
+  // 更新は notifyListeners(reset) で通知する(Syncfusion 推奨パターン)。
+  // build のたびに new していると、setState 連鎖時に内部 GlobalKey の
+  // 重複や不正レイアウトを誘発することがあるため。
+  final TeamScheduleDataSource _dataSource =
+      TeamScheduleDataSource(<TeamSchedule>[]);
   List<ScheduleTemplate> templates = [];
   List<TeamPlayer> players = [];
 
@@ -58,18 +66,43 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _init() async {
-    final teamId = await TeamService.getCurrentTeamId();
-    final admin = await FirestoreService.isCurrentUserAdmin();
+    // schedules / templates は teamId に依存しないため、先に購読を開始する。
+    // 以前は getCurrentTeamId() の await 後に購読していたため、
+    // その処理が例外を投げるとカレンダーの購読自体が始まらず、
+    // Firestore にデータがあっても予定が一切表示されなかった。
+    _listenSchedules();
 
-    if (!mounted) return;
-    setState(() => isAdmin = admin);
-    _listenAll(teamId);
+    try {
+      final teamId = await TeamService.getCurrentTeamId();
+      final admin = await FirestoreService.isCurrentUserAdmin();
+
+      if (!mounted) return;
+      setState(() => isAdmin = admin);
+      _listenPlayers(teamId);
+    } catch (e) {
+      debugPrint('ScheduleScreen init error: $e');
+      _showStreamError(e);
+    }
   }
 
-  void _listenAll(String teamId) {
+  void _setSchedules(List<TeamSchedule> list) {
+    if (!mounted) return;
+    setState(() => schedules = list);
+    _dataSource.appointments!
+      ..clear()
+      ..addAll(list);
+    _dataSource.notifyListeners(CalendarDataSourceAction.reset, list);
+  }
+
+  void _listenSchedules() {
     _schedulesSub = ScheduleRepository.watchSchedules().listen(
       (list) {
-        if (mounted) setState(() => schedules = list);
+        // 切り分け用ログ
+        debugPrint('Schedules: ${list.length}');
+        for (final s in list) {
+          debugPrint('${s.title} ${s.start} - ${s.end}');
+        }
+        _setSchedules(list);
       },
       onError: _showStreamError,
     );
@@ -80,7 +113,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       },
       onError: _showStreamError,
     );
+  }
 
+  void _listenPlayers(String teamId) {
     _playersSub = FirebaseFirestore.instance
         .collection('players')
         .where('teamId', isEqualTo: teamId)
@@ -115,8 +150,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   Future<void> _reloadSchedules() async {
     final loaded = await ScheduleRepository.fetchSchedules();
-    if (!mounted) return;
-    setState(() => schedules = loaded);
+    _setSchedules(loaded);
   }
 
   Future<void> _addSchedules(AddScheduleInput input) async {
@@ -212,27 +246,26 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
               Expanded(
                 child: PinnedPaperCard(
-                  child: SfCalendar(
-                    view: CalendarView.month,
-                    firstDayOfWeek: 1,
-                    todayHighlightColor: const Color(0xFFD32F2F),
-                    dataSource: TeamScheduleDataSource(schedules),
-                    onViewChanged: _onCalendarViewChanged,
-                    monthViewSettings: const MonthViewSettings(
-                      appointmentDisplayMode:
-                          MonthAppointmentDisplayMode.appointment,
-                      showAgenda: true,
-                    ),
-                    appointmentTextStyle: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    onTap: (details) {
-                      final tapped = details.appointments;
-                      if (tapped == null || tapped.isEmpty) return;
-
-                      _showScheduleDetail(tapped.first as TeamSchedule);
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // syncfusion_flutter_calendar 33.2.12 の月表示は、
+                      // カレンダーの描画高さが小さすぎると予定バーの角丸半径が
+                      // 負になり geometry.dart の assert (tlRadiusX >= 0) で落ちる。
+                      // 最低高さを保証し、実領域が足りないときだけスクロールで逃がす。
+                      const minCalendarHeight = 500.0;
+                      final calendar = _buildCalendar();
+                      if (constraints.maxHeight >= minCalendarHeight) {
+                        return calendar;
+                      }
+                      return SingleChildScrollView(
+                        child: SizedBox(
+                          height: math.max(
+                            constraints.maxHeight,
+                            minCalendarHeight,
+                          ),
+                          child: calendar,
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -243,6 +276,31 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       ),
       floatingActionButton:
           WesFab(onPressed: _onAddPressed, tooltip: '予定を追加'),
+    );
+  }
+
+  SfCalendar _buildCalendar() {
+    return SfCalendar(
+      view: CalendarView.month,
+      firstDayOfWeek: 1,
+      todayHighlightColor: const Color(0xFFD32F2F),
+      dataSource: _dataSource,
+      onViewChanged: _onCalendarViewChanged,
+      monthViewSettings: const MonthViewSettings(
+        appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
+        showAgenda: true,
+      ),
+      appointmentTextStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.bold,
+      ),
+      onTap: (details) {
+        final tapped = details.appointments;
+        if (tapped == null || tapped.isEmpty) return;
+
+        _showScheduleDetail(tapped.first as TeamSchedule);
+      },
     );
   }
 }
