@@ -13,7 +13,7 @@ class WesBottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   static const Color _paper = Color(0xFFFFFDF7);
-  
+
   @override
   Widget build(BuildContext context) {
     return BottomAppBar(
@@ -86,22 +86,29 @@ class _NavItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: const EdgeInsets.only(top: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 26),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 13,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+      // 修正: 固定の top padding 8 + アイコン + テキストの合計高さが
+      // BottomAppBar 内の利用可能高さ(約42px)を超えて
+      // 「RenderFlex overflowed by 6.0 pixels」が発生していた。
+      // Center + FittedBox(scaleDown) で、収まるときは等倍のまま中央配置、
+      // 収まらない環境でも縮小してオーバーフローを防ぐ。
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 26),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

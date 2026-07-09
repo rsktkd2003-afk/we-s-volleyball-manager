@@ -236,46 +236,78 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return Scaffold(
       body: CorkBoardBackground(
         child: SafeArea(
-          child: Column(
-            children: [
-              BulletinStickyArea(
-                visibleMonth: _visibleMonth,
-                isAdmin: isAdmin,
-              ),
-              const MatchPollEntryCard(),
-
-              Expanded(
-                child: PinnedPaperCard(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      // syncfusion_flutter_calendar 33.2.12 の月表示は、
-                      // カレンダーの描画高さが小さすぎると予定バーの角丸半径が
-                      // 負になり geometry.dart の assert (tlRadiusX >= 0) で落ちる。
-                      // 最低高さを保証し、実領域が足りないときだけスクロールで逃がす。
-                      const minCalendarHeight = 500.0;
-                      final calendar = _buildCalendar();
-                      if (constraints.maxHeight >= minCalendarHeight) {
-                        return calendar;
-                      }
-                      return SingleChildScrollView(
-                        child: SizedBox(
-                          height: math.max(
-                            constraints.maxHeight,
-                            minCalendarHeight,
-                          ),
-                          child: calendar,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // 幅600px未満をスマホ扱いにする。
+              // syncfusion_flutter_calendar 33.2.12 の月表示は、カレンダーの
+              // 描画高さが小さすぎると予定バーの角丸半径が負になり
+              // geometry.dart の assert (tlRadiusX >= 0) で落ちるため、
+              // どちらのレイアウトでもカレンダーの高さを潰さないようにする。
+              final isMobile = constraints.maxWidth < 600;
+              return isMobile ? _buildMobileLayout() : _buildWideLayout();
+            },
           ),
         ),
       ),
       floatingActionButton:
           WesFab(onPressed: _onAddPressed, tooltip: '予定を追加'),
+    );
+  }
+
+  /// スマホ(幅600px未満): 画面全体を縦スクロールにし、
+  /// カレンダーには固定高さ620pxを与えて表示領域を保証する。
+  Widget _buildMobileLayout() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          BulletinStickyArea(
+            visibleMonth: _visibleMonth,
+            isAdmin: isAdmin,
+          ),
+          const MatchPollEntryCard(),
+          SizedBox(
+            height: 620,
+            width: double.infinity,
+            child: PinnedPaperCard(child: _buildCalendar()),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// PC・タブレット(幅600px以上): 従来どおり Expanded で残り領域いっぱいに
+  /// カレンダーを表示。ウィンドウが極端に低い場合のみ最低高さ500pxを保証。
+  Widget _buildWideLayout() {
+    return Column(
+      children: [
+        BulletinStickyArea(
+          visibleMonth: _visibleMonth,
+          isAdmin: isAdmin,
+        ),
+        const MatchPollEntryCard(),
+        Expanded(
+          child: PinnedPaperCard(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                const minCalendarHeight = 500.0;
+                final calendar = _buildCalendar();
+                if (constraints.maxHeight >= minCalendarHeight) {
+                  return calendar;
+                }
+                return SingleChildScrollView(
+                  child: SizedBox(
+                    height: math.max(
+                      constraints.maxHeight,
+                      minCalendarHeight,
+                    ),
+                    child: calendar,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
     );
   }
 
