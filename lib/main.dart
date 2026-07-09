@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/firestore_service.dart';
+import 'services/notification_service.dart';
 import 'features/practice/player_link/player_link_screen.dart';
 
 Future<void> main() async {
@@ -14,11 +15,17 @@ Future<void> main() async {
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  FirebaseAuth.instance.authStateChanges().listen((user) {
+    if (user != null) {
+      NotificationService.initialize();
+    }
+  });
+
   runApp(
-  const ProviderScope(
-    child: MyApp(),
-  ),
-);
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
