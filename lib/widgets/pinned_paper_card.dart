@@ -8,7 +8,7 @@ class PinnedPaperCard extends StatelessWidget {
     super.key,
     required this.child,
     this.margin = const EdgeInsets.fromLTRB(12, 8, 12, 12),
-    this.padding = const EdgeInsets.fromLTRB(30, 42, 30, 30),
+    this.padding = const EdgeInsets.fromLTRB(16, 32, 16, 20),
   });
 
   final Widget child;
@@ -20,14 +20,13 @@ class PinnedPaperCard extends StatelessWidget {
     return Padding(
       padding: margin,
       child: Stack(
-                fit: StackFit.expand,
-                clipBehavior: Clip.none,
+        clipBehavior: Clip.none,
         children: [
           Container(
             width: double.infinity,
             padding: padding,
             decoration: BoxDecoration(
-              color: const Color(0xFFFCFAF4), // 少しだけ生成りの紙
+              color: const Color(0xFFFCFAF4),
               borderRadius: BorderRadius.circular(12),
               boxShadow: const [
                 BoxShadow(
