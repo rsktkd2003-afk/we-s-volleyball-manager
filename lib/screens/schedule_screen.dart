@@ -14,7 +14,6 @@ import '../models/team_player.dart';
 import '../models/team_schedule.dart';
 import '../repositories/schedule_repository.dart';
 import '../services/firestore_service.dart';
-import '../services/team_service.dart';
 import '../utils/schedule_utils.dart';
 import '../widgets/bulletin_sticky_area.dart';
 import '../widgets/cork_board_background.dart';
@@ -66,19 +65,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _init() async {
-    // schedules / templates は teamId に依存しないため、先に購読を開始する。
-    // 以前は getCurrentTeamId() の await 後に購読していたため、
-    // その処理が例外を投げるとカレンダーの購読自体が始まらず、
-    // Firestore にデータがあっても予定が一切表示されなかった。
     _listenSchedules();
+    _listenPlayers();
 
     try {
-      final teamId = await TeamService.getCurrentTeamId();
       final admin = await FirestoreService.isCurrentUserAdmin();
 
       if (!mounted) return;
       setState(() => isAdmin = admin);
-      _listenPlayers(teamId);
     } catch (e) {
       debugPrint('ScheduleScreen init error: $e');
       _showStreamError(e);
@@ -115,10 +109,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  void _listenPlayers(String teamId) {
+  void _listenPlayers() {
     _playersSub = FirebaseFirestore.instance
         .collection('players')
-        .where('teamId', isEqualTo: teamId)
         .snapshots()
         .listen(
           (snapshot) {

@@ -6,7 +6,6 @@ import '../models/team_schedule.dart';
 
 /// schedules / schedule_templates / 出欠(responses) への
 /// Firestore アクセスを一元化する。
-/// 単一チーム運用のため teamId フィルタは使わない。
 class ScheduleRepository {
   static final _db = FirebaseFirestore.instance;
 

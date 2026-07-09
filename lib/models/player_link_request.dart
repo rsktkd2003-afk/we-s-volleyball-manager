@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class PlayerLinkRequest {
   final String id;
 
-  final String teamId;
   final String uid;
   final String playerId;
   final String playerName;
@@ -17,7 +16,6 @@ class PlayerLinkRequest {
 
   const PlayerLinkRequest({
     this.id = '',
-    required this.teamId,
     required this.uid,
     required this.playerId,
     required this.playerName,
@@ -34,7 +32,6 @@ class PlayerLinkRequest {
 
   Map<String, dynamic> toJson() {
     return {
-      'teamId': teamId,
       'uid': uid,
       'playerId': playerId,
       'playerName': playerName,
@@ -54,7 +51,6 @@ class PlayerLinkRequest {
   }) {
     return PlayerLinkRequest(
       id: id,
-      teamId: json['teamId'] ?? '',
       uid: json['uid'] ?? '',
       playerId: json['playerId'] ?? '',
       playerName: json['playerName'] ?? '',

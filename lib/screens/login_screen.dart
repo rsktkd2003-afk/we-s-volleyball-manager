@@ -10,9 +10,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // TODO: ここを自分のteamIdに変更
-  static const String defaultTeamId = 'wes';
-
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
@@ -70,7 +67,6 @@ class _LoginScreenState extends State<LoginScreen> {
       await userRef.set({
         'email': user.email,
         'displayName': user.displayName ?? '',
-        'teamId': defaultTeamId,
         'role': 'member',
         'playerId': null,
         'createdAt': FieldValue.serverTimestamp(),
@@ -91,10 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!data.containsKey('displayName')) {
       updates['displayName'] = user.displayName ?? '';
-    }
-
-    if (!data.containsKey('teamId')) {
-      updates['teamId'] = defaultTeamId;
     }
 
     if (!data.containsKey('role')) {

@@ -19,11 +19,6 @@ class FirestoreService {
     return doc.data();
   }
 
-  static Future<String?> loadCurrentTeamId() async {
-    final data = await loadCurrentUserData();
-    return data?['teamId'] as String?;
-  }
-
   static Future<bool> isCurrentUserAdmin() async {
     final data = await loadCurrentUserData();
     return data?['role'] == 'admin';
@@ -34,15 +29,7 @@ class FirestoreService {
       _db.collection('players');
 
   static Future<List<Player>> loadUnlinkedPlayers() async {
-    final teamId = await loadCurrentTeamId();
-
-    Query<Map<String, dynamic>> query = playersRef;
-
-    if (teamId != null && teamId.isNotEmpty) {
-      query = query.where('teamId', isEqualTo: teamId);
-    }
-
-    query = query.where('linkedUid', isNull: true);
+    final query = playersRef.where('linkedUid', isNull: true);
 
     final snapshot = await query.get();
 
@@ -57,12 +44,10 @@ class FirestoreService {
 
   static Future<PlayerLinkRequest?> loadMyPendingPlayerLinkRequest() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    final teamId = await loadCurrentTeamId();
 
-    if (uid == null || teamId == null || teamId.isEmpty) return null;
+    if (uid == null) return null;
 
     final snapshot = await playerLinkRequestsRef
-        .where('teamId', isEqualTo: teamId)
         .where('uid', isEqualTo: uid)
         .where('status', isEqualTo: 'pending')
         .limit(1)
@@ -75,11 +60,7 @@ class FirestoreService {
   }
 
   static Future<List<PlayerLinkRequest>> loadPendingPlayerLinkRequests() async {
-    final teamId = await loadCurrentTeamId();
-    if (teamId == null || teamId.isEmpty) return [];
-
     final snapshot = await playerLinkRequestsRef
-        .where('teamId', isEqualTo: teamId)
         .where('status', isEqualTo: 'pending')
         .orderBy('createdAt', descending: false)
         .get();
@@ -100,11 +81,6 @@ class FirestoreService {
       throw Exception('ログイン情報が見つかりません');
     }
 
-    final teamId = userData['teamId'] as String?;
-    if (teamId == null || teamId.isEmpty) {
-      throw Exception('teamIdが見つかりません');
-    }
-
     final currentPlayerId = userData['playerId'] as String?;
     if (currentPlayerId != null && currentPlayerId.isNotEmpty) {
       throw Exception('すでに選手データと連携済みです');
@@ -122,17 +98,12 @@ class FirestoreService {
       throw Exception('選手データが見つかりません');
     }
 
-    if (playerData['teamId'] != teamId) {
-      throw Exception('別チームの選手は選択できません');
-    }
-
     if (playerData['linkedUid'] != null &&
         playerData['linkedUid'].toString().isNotEmpty) {
       throw Exception('この選手はすでに連携済みです');
     }
 
     final request = PlayerLinkRequest(
-      teamId: teamId,
       uid: user.uid,
       playerId: playerId,
       playerName: playerName,
@@ -189,11 +160,6 @@ class FirestoreService {
       final linkedUid = playerData['linkedUid'];
       if (linkedUid != null && linkedUid.toString().isNotEmpty) {
         throw Exception('この選手はすでに他のユーザーと連携済みです');
-      }
-
-      if (userData['teamId'] != requestData['teamId'] ||
-          playerData['teamId'] != requestData['teamId']) {
-        throw Exception('teamIdが一致しません');
       }
 
       transaction.update(userRef, {

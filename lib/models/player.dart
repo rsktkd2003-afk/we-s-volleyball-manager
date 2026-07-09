@@ -1,8 +1,7 @@
 class Player {
   String id;
 
-  // チーム・権限
-  String teamId;
+  // 権限
   String ownerUid;
   String? linkedUid;
 
@@ -38,7 +37,6 @@ class Player {
 
   Player({
     this.id = '',
-    this.teamId = '',
     this.ownerUid = '',
     this.linkedUid,
     required this.name,
@@ -71,7 +69,6 @@ class Player {
 
   Map<String, dynamic> toJson() {
     return {
-      'teamId': teamId,
       'ownerUid': ownerUid,
       'linkedUid': linkedUid,
       'name': name,
@@ -102,7 +99,6 @@ class Player {
   factory Player.fromJson(Map<String, dynamic> json, {String id = ''}) {
     return Player(
       id: id,
-      teamId: json['teamId'] ?? '',
       ownerUid: json['ownerUid'] ?? '',
       linkedUid: json['linkedUid'],
       name: json['name'] ?? '',

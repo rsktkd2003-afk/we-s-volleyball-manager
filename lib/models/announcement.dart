@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class Announcement {
   Announcement({
     required this.id,
-    this.teamId = '',
     required this.title,
     required this.body,
     required this.sortOrder,
@@ -14,7 +13,6 @@ class Announcement {
   });
 
   final String id;
-  final String teamId;
   final String title;
   final String body;
   final int sortOrder;
@@ -28,7 +26,6 @@ class Announcement {
 
     return Announcement(
       id: doc.id,
-      teamId: data['teamId'] as String? ?? '',
       title: data['title'] as String? ?? '',
       body: data['body'] as String? ?? '',
       sortOrder: (data['sortOrder'] as num?)?.toInt() ?? 0,

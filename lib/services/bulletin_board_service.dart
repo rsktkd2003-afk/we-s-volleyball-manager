@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/announcement.dart';
 import '../models/team_goal.dart';
-import 'team_service.dart';
 
 class BulletinBoardService {
   BulletinBoardService({
@@ -21,11 +20,8 @@ class BulletinBoardService {
   CollectionReference<Map<String, dynamic>> get _goals =>
       _firestore.collection('goals');
 
-  Stream<List<Announcement>> watchAnnouncements() async* {
-    final teamId = await TeamService.getCurrentTeamId();
-
-    yield* _announcements
-        .where('teamId', isEqualTo: teamId)
+  Stream<List<Announcement>> watchAnnouncements() {
+    return _announcements
         .orderBy('sortOrder')
         .orderBy('createdAt', descending: true)
         .snapshots()
@@ -35,12 +31,10 @@ class BulletinBoardService {
         );
   }
 
-  Stream<List<TeamGoal>> watchGoalsForMonth(DateTime month) async* {
-    final teamId = await TeamService.getCurrentTeamId();
+  Stream<List<TeamGoal>> watchGoalsForMonth(DateTime month) {
     final monthKey = _monthKey(month);
 
-    yield* _goals
-        .where('teamId', isEqualTo: teamId)
+    return _goals
         .where('monthKey', isEqualTo: monthKey)
         .orderBy('sortOrder')
         .snapshots()
@@ -56,12 +50,10 @@ class BulletinBoardService {
     bool isPinned = false,
   }) async {
     final uid = _requireUid();
-    final teamId = await TeamService.getCurrentTeamId();
     final now = DateTime.now();
 
     final announcement = Announcement(
       id: '',
-      teamId: teamId,
       title: title,
       body: body,
       sortOrder: sortOrder,
@@ -101,12 +93,10 @@ class BulletinBoardService {
     int sortOrder = 0,
   }) async {
     final uid = _requireUid();
-    final teamId = await TeamService.getCurrentTeamId();
     final now = DateTime.now();
 
     final goal = TeamGoal(
       id: '',
-      teamId: teamId,
       monthKey: _monthKey(month),
       title: title,
       body: body,

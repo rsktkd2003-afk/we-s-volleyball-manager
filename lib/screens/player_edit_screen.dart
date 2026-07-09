@@ -113,35 +113,52 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
   }
 
   Future<void> savePlayer() async {
-    final updatedPlayer = Player(
-      id: widget.player.id,
-      name: nameController.text.trim(),
-      number: _toInt(numberController.text),
-      position: positionController.text.trim(),
-      dominantHand: dominantHandController.text.trim(),
-      grade: gradeController.text.trim(),
-      height: _toDouble(heightController.text),
-      weight: _toDouble(weightController.text),
-      standingReach: _toDouble(standingReachController.text),
-      maxReach: _toDouble(maxReachController.text),
-      blockReach: _toDouble(blockReachController.text),
-      spike: _toAbility(spikeController.text),
-      serve: _toAbility(serveController.text),
-      reception: _toAbility(receptionController.text),
-      dig: _toAbility(digController.text),
-      toss: _toAbility(tossController.text),
-      block: _toAbility(blockController.text),
-      mobility: _toAbility(mobilityController.text),
-    );
+  final updatedPlayer = Player(
+    id: widget.player.id,
 
-    await FirebaseFirestore.instance
-        .collection('players')
-        .doc(updatedPlayer.id)
-        .update(updatedPlayer.toJson());
+    // 既存情報を保持
+    ownerUid: widget.player.ownerUid,
+    linkedUid: widget.player.linkedUid,
 
-    if (!mounted) return;
-    Navigator.pop(context, true);
-  }
+    // 基本情報
+    name: nameController.text.trim(),
+    number: _toInt(numberController.text),
+    position: positionController.text.trim(),
+    dominantHand: dominantHandController.text.trim(),
+    grade: gradeController.text.trim(),
+
+    // 身体データ
+    height: _toDouble(heightController.text),
+    weight: _toDouble(weightController.text),
+    standingReach: _toDouble(standingReachController.text),
+    maxReach: _toDouble(maxReachController.text),
+    blockReach: _toDouble(blockReachController.text),
+
+    // 能力値
+    spike: _toAbility(spikeController.text),
+    serve: _toAbility(serveController.text),
+    reception: _toAbility(receptionController.text),
+    dig: _toAbility(digController.text),
+    toss: _toAbility(tossController.text),
+    block: _toAbility(blockController.text),
+    mobility: _toAbility(mobilityController.text),
+
+    // 編集対象ではないパラメータを保持
+    jump: widget.player.jump,
+    power: widget.player.power,
+    speed: widget.player.speed,
+    stamina: widget.player.stamina,
+    gameSense: widget.player.gameSense,
+  );
+
+  await FirebaseFirestore.instance
+      .collection('players')
+      .doc(updatedPlayer.id)
+      .update(updatedPlayer.toJson());
+
+  if (!mounted) return;
+  Navigator.pop(context, true);
+}
 
   @override
   Widget build(BuildContext context) {

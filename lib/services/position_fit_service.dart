@@ -19,25 +19,25 @@ class PositionFitService {
     );
 
     final ws =
-    player.spike * 0.30 +
-    player.reception * 0.25 +
-    player.dig * 0.15 +
-    maxReachScore * 0.15 +
-    player.serve * 0.10 +
-    player.mobility * 0.05;
+      player.spike * 0.30 +
+      player.reception * 0.25 +
+      player.dig * 0.15 +
+      maxReachScore * 0.15 +
+      player.serve * 0.10 +
+      player.mobility * 0.05;
 
-double op =
-    player.spike * 0.40 +
-    maxReachScore * 0.20 +
-    player.block * 0.15 +
-    player.serve * 0.15 +
-    player.dig * 0.10;
+    double op =
+      player.spike * 0.40 +
+      maxReachScore * 0.20 +
+      player.block * 0.15 +
+      player.serve * 0.15 +
+      player.dig * 0.10;
 
     final mb =
-    player.block * 0.45 +
-    maxReachScore * 0.20 +
-    heightScore * 0.10 +
-    player.mobility * 0.25;
+      player.block * 0.45 +
+      maxReachScore * 0.20 +
+      heightScore * 0.10 +
+      player.mobility * 0.25;
 
     final setter =
         player.toss * 0.40 +

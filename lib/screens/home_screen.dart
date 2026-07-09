@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 
 import '../dialogs/add_player_dialog.dart';
 import '../models/player.dart';
-import '../services/team_service.dart';
 import '../widgets/cork_board_background.dart';
 import '../widgets/player_filter_bar.dart';
 import '../widgets/player_list.dart';
@@ -30,7 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String sortType = '背番号';
 
   List<Player> players = [];
-  String? teamId;
 
   StreamSubscription? playersSubscription;
 
@@ -41,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    initTeam();
+    listenPlayers();
   }
 
   @override
@@ -50,16 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> initTeam() async {
-    teamId = await TeamService.getCurrentTeamId();
-    if (!mounted) return;
-    listenPlayers();
-  }
-
   void listenPlayers() {
     playersSubscription = FirebaseFirestore.instance
         .collection('players')
-        .where('teamId', isEqualTo: teamId)
         .snapshots()
         .listen(
           (snapshot) {
@@ -121,7 +112,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     await FirebaseFirestore.instance.collection('players').add({
       ...newPlayer.toJson(),
-      'teamId': teamId,
       'ownerUid': FirebaseAuth.instance.currentUser?.uid,
     });
   }

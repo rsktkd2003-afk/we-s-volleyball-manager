@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class TeamGoal {
   TeamGoal({
     required this.id,
-    this.teamId = '',
     required this.monthKey,
     required this.title,
     required this.body,
@@ -14,7 +13,6 @@ class TeamGoal {
   });
 
   final String id;
-  final String teamId;
   final String monthKey;
   final String title;
   final String body;
@@ -28,7 +26,6 @@ class TeamGoal {
 
     return TeamGoal(
       id: doc.id,
-      teamId: data['teamId'] as String? ?? '',
       monthKey: data['monthKey'] as String? ?? '',
       title: data['title'] as String? ?? '',
       body: data['body'] as String? ?? '',
