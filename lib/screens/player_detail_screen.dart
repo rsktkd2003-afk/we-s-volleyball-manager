@@ -1,44 +1,72 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../models/player.dart';
 import '../services/position_fit_service.dart';
+import '../theme/app_colors.dart';
 import '../widgets/ability_radar_chart.dart';
+import '../widgets/pin_badge.dart';
 import '../widgets/player_issue_section.dart';
 
+part 'player_detail_screen_layout.dart';
+part 'player_detail_screen_cards.dart';
+part 'player_detail_screen_chrome.dart';
+
 class PlayerDetailScreen extends StatelessWidget {
-  const PlayerDetailScreen({super.key, required this.player});
+  const PlayerDetailScreen({
+    super.key,
+    required this.player,
+  });
 
   final Player player;
+
+  static const Color _accentRed = Color(0xFFC0392B);
+  static const Color _boardColor = Color(0xFFE9E8E3);
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
+        backgroundColor: _boardColor,
         appBar: AppBar(
           title: Text(player.name),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: '基本'),
-              Tab(text: '身体'),
-              Tab(text: '改善点'),
-            ],
-          ),
+          backgroundColor: const Color(0xFFF7F5EF),
+          foregroundColor: const Color(0xFF252525),
+          elevation: 1,
           actions: [
             IconButton(
-              icon: const Icon(Icons.edit),
+              tooltip: '編集',
+              icon: const Icon(Icons.edit_outlined),
               onPressed: () => Navigator.pop(context, 'edit'),
             ),
             IconButton(
-              icon: const Icon(Icons.delete),
+              tooltip: '削除',
+              icon: const Icon(Icons.delete_outline),
+              color: _accentRed,
               onPressed: () => Navigator.pop(context, 'delete'),
             ),
           ],
+          bottom: const TabBar(
+            labelColor: _accentRed,
+            unselectedLabelColor: AppColors.textSecondary,
+            indicatorColor: _accentRed,
+            tabs: [
+              Tab(
+                icon: Icon(Icons.badge_outlined),
+                text: 'スカウトカード',
+              ),
+              Tab(
+                icon: Icon(Icons.flag_outlined),
+                text: '改善点',
+              ),
+            ],
+          ),
         ),
         body: TabBarView(
           children: [
-            _BasicTab(player: player),
-            _PhysicalTab(player: player),
+            _ScoutingBoard(player: player),
             PlayerIssueSection(player: player),
           ],
         ),
@@ -47,163 +75,75 @@ class PlayerDetailScreen extends StatelessWidget {
   }
 }
 
-class _BasicTab extends StatelessWidget {
-  const _BasicTab({required this.player});
+class _ScoutingBoard extends StatelessWidget {
+  const _ScoutingBoard({
+    required this.player,
+  });
 
   final Player player;
 
   @override
   Widget build(BuildContext context) {
-    final scores = PositionFitService.calculate(player);
-    final bestPosition = PositionFitService.bestPosition(player);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 1100;
+        final isTablet = constraints.maxWidth >= 700;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _InfoTile(label: '名前', value: player.name),
-        _InfoTile(label: '背番号', value: player.number.toString()),
-        _InfoTile(label: 'ポジション', value: player.position),
-        _InfoTile(label: '利き手', value: player.dominantHand),
-        _InfoTile(label: '学年', value: player.grade),
-        const SizedBox(height: 24),
-        const Text(
-          '能力値レーダー',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: AbilityRadarChart(
-              values: {
-                'スパイク': player.spike,
-                'サーブ': player.serve,
-                'レセプ': player.reception,
-                'ディグ': player.dig,
-                'トス': player.toss,
-                'ブロック': player.block,
-                '機動力': player.mobility,
-              },
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        const Text(
-          'ポジション適性',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '推奨ポジション：$bestPosition',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...scores.entries.map(
-                  (e) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 40,
-                          child: Text(
-                            e.key,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        Expanded(
-                          child: LinearProgressIndicator(
-                            value: (e.value / 100).clamp(0.0, 1.0),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(e.value.toStringAsFixed(1)),
-                      ],
-                    ),
-                  ),
-                ),
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFE9E8E3),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFF1F0EC),
+                Color(0xFFE1E0DC),
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PhysicalTab extends StatelessWidget {
-  const _PhysicalTab({required this.player});
-
-  final Player player;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const Text(
-          '身体データ',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        _InfoTile(label: '身長', value: '${player.height.toStringAsFixed(1)} cm'),
-        _InfoTile(label: '体重', value: '${player.weight.toStringAsFixed(1)} kg'),
-        _InfoTile(
-          label: '指高',
-          value: '${player.standingReach.toStringAsFixed(1)} cm',
-        ),
-        _InfoTile(
-          label: '最高到達点',
-          value: '${player.maxReach.toStringAsFixed(1)} cm',
-        ),
-        _InfoTile(
-          label: 'ブロック到達点',
-          value: '${player.blockReach.toStringAsFixed(1)} cm',
-        ),
-        _InfoTile(
-          label: 'ジャンプ力',
-          value: '${player.jumpHeight.toStringAsFixed(1)} cm',
-        ),
-        const SizedBox(height: 24),
-        const Text(
-          '能力パラメーター',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        _InfoTile(label: 'スパイク', value: player.spike.toString()),
-        _InfoTile(label: 'サーブ', value: player.serve.toString()),
-        _InfoTile(label: 'レセプション', value: player.reception.toString()),
-        _InfoTile(label: 'ディグ', value: player.dig.toString()),
-        _InfoTile(label: 'トス', value: player.toss.toString()),
-        _InfoTile(label: 'ブロック', value: player.block.toString()),
-        _InfoTile(label: '機動力', value: player.mobility.toString()),
-      ],
-    );
-  }
-}
-
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(label),
-        trailing: Text(
-          value,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
+          child: Stack(
+            children: [
+              const Positioned(
+                top: 10,
+                left: 10,
+                child: _BoardScrew(),
+              ),
+              const Positioned(
+                top: 10,
+                right: 10,
+                child: _BoardScrew(),
+              ),
+              const Positioned(
+                bottom: 10,
+                left: 10,
+                child: _BoardScrew(),
+              ),
+              const Positioned(
+                bottom: 10,
+                right: 10,
+                child: _BoardScrew(),
+              ),
+              SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isDesktop ? 34 : 16,
+                  vertical: 28,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1500),
+                    child: isDesktop
+                        ? _DesktopLayout(player: player)
+                        : _CompactLayout(
+                            player: player,
+                            isTablet: isTablet,
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

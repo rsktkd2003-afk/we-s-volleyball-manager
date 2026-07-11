@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/player_issue.dart';
 import '../models/player_issue_comment.dart';
+import '../utils/firestore_collections.dart';
 
 class PlayerIssueRepository {
   PlayerIssueRepository({
@@ -16,16 +17,16 @@ class PlayerIssueRepository {
 
   CollectionReference<Map<String, dynamic>> _issues(String playerId) {
     return _firestore
-        .collection('players')
+        .collection(FirestoreCollections.players)
         .doc(playerId)
-        .collection('issues');
+        .collection(FirestoreCollections.issues);
   }
 
   CollectionReference<Map<String, dynamic>> _comments({
     required String playerId,
     required String issueId,
   }) {
-    return _issues(playerId).doc(issueId).collection('comments');
+    return _issues(playerId).doc(issueId).collection(FirestoreCollections.comments);
   }
 
   Stream<List<PlayerIssue>> watchIssues(String playerId) {

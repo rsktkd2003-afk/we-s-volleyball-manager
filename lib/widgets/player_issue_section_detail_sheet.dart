@@ -115,7 +115,7 @@ class _IssueDetailSheetState extends ConsumerState<_IssueDetailSheet> {
             return Container(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               decoration: const BoxDecoration(
-                color: Color(0xFFFFFDF7),
+                color: AppColors.paper,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
               ),
               child: ListView(
@@ -151,7 +151,7 @@ class _IssueDetailSheetState extends ConsumerState<_IssueDetailSheet> {
                       if (widget.onDeleteIssue != null)
                         IconButton(
                           icon: const Icon(Icons.delete_outline),
-                          color: const Color(0xFFD32F2F),
+                          color: AppColors.accent,
                           onPressed: widget.onDeleteIssue,
                         ),
                     ],
@@ -163,7 +163,7 @@ class _IssueDetailSheetState extends ConsumerState<_IssueDetailSheet> {
                     '${widget.issue.createdByName.isEmpty ? '投稿者' : widget.issue.createdByName}・${_formatDate(widget.issue.createdAt)}',
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF666666),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   const Divider(height: 28),
@@ -179,7 +179,7 @@ class _IssueDetailSheetState extends ConsumerState<_IssueDetailSheet> {
                           padding: EdgeInsets.symmetric(vertical: 12),
                           child: Text(
                             'まだコメントはありません。',
-                            style: TextStyle(color: Color(0xFF666666)),
+                            style: TextStyle(color: AppColors.textSecondary),
                           ),
                         );
                       }
@@ -259,7 +259,7 @@ class _CommentTile extends StatelessWidget {
         trailing: canDelete
             ? IconButton(
                 icon: const Icon(Icons.delete_outline),
-                color: const Color(0xFFD32F2F),
+                color: AppColors.accent,
                 onPressed: onDelete,
               )
             : null,

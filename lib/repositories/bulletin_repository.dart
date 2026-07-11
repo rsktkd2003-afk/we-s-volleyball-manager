@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/announcement.dart';
 import '../models/team_goal.dart';
+import '../utils/firestore_collections.dart';
 
 class BulletinRepository {
   BulletinRepository({
@@ -15,10 +16,10 @@ class BulletinRepository {
   final FirebaseAuth _auth;
 
   CollectionReference<Map<String, dynamic>> get _announcements =>
-      _firestore.collection('announcements');
+      _firestore.collection(FirestoreCollections.announcements);
 
   CollectionReference<Map<String, dynamic>> get _goals =>
-      _firestore.collection('goals');
+      _firestore.collection(FirestoreCollections.goals);
 
   Stream<List<Announcement>> watchAnnouncements() {
     return _announcements

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/schedule_template.dart';
 import '../models/team_schedule.dart';
+import '../utils/firestore_collections.dart';
 
 /// schedules / schedule_templates / 出欠(responses) への
 /// Firestore アクセスを一元化する。
@@ -10,14 +11,14 @@ class ScheduleRepository {
   static final _db = FirebaseFirestore.instance;
 
   static CollectionReference<Map<String, dynamic>> get _schedules =>
-      _db.collection('schedules');
+      _db.collection(FirestoreCollections.schedules);
 
   static CollectionReference<Map<String, dynamic>> get _templates =>
-      _db.collection('schedule_templates');
+      _db.collection(FirestoreCollections.scheduleTemplates);
 
   static CollectionReference<Map<String, dynamic>> _responses(
     String scheduleId,
-  ) => _schedules.doc(scheduleId).collection('responses');
+  ) => _schedules.doc(scheduleId).collection(FirestoreCollections.responses);
 
   // ---------- schedules ----------
 

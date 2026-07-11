@@ -19,6 +19,7 @@ dependencies:
   table_calendar: ^3.2.0
   syncfusion_flutter_calendar: ^33.2.6
   firebase_auth: ^6.5.2
+  firebase_messaging: ^16.4.1
 
 dev_dependencies:
   flutter_test:

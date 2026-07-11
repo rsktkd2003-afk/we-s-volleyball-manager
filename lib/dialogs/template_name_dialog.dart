@@ -7,21 +7,21 @@ Future<String?> showTemplateNameDialog(BuildContext context) {
     context: context,
     builder: (context) {
       return AlertDialog(
-        title: const Text('Template Name'),
+        title: const Text('テンプレート名'),
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(
-            hintText: 'Example: Thursday Practice',
+            hintText: '例：木曜練習',
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('キャンセル'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Save'),
+            child: const Text('保存'),
           ),
         ],
       );

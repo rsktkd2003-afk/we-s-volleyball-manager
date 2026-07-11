@@ -14,6 +14,8 @@ import '../models/team_player.dart';
 import '../models/team_schedule.dart';
 import '../repositories/schedule_repository.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_colors.dart';
+import '../utils/firestore_collections.dart';
 import '../utils/schedule_utils.dart';
 import '../widgets/bulletin_sticky_area.dart';
 import '../widgets/cork_board_background.dart';
@@ -111,7 +113,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   void _listenPlayers() {
     _playersSub = FirebaseFirestore.instance
-        .collection('players')
+        .collection(FirestoreCollections.players)
         .snapshots()
         .listen(
           (snapshot) {
@@ -308,7 +310,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return SfCalendar(
       view: CalendarView.month,
       firstDayOfWeek: 1,
-      todayHighlightColor: const Color(0xFFD32F2F),
+      todayHighlightColor: AppColors.accent,
       dataSource: _dataSource,
       onViewChanged: _onCalendarViewChanged,
       monthViewSettings: const MonthViewSettings(

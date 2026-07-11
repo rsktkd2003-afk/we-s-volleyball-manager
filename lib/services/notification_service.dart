@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
+import '../utils/firestore_collections.dart';
+
 class NotificationService {
   NotificationService._();
 
@@ -53,9 +55,9 @@ class NotificationService {
 
   static Future<void> _saveToken(String uid, String token) async {
     await _firestore
-        .collection('users')
+        .collection(FirestoreCollections.users)
         .doc(uid)
-        .collection('fcmTokens')
+        .collection(FirestoreCollections.fcmTokens)
         .doc(token)
         .set({
       'token': token,

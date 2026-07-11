@@ -52,7 +52,7 @@ class _AnnouncementWrap extends StatelessWidget {
         emptyText: '＋ タップして追加',
         color: const Color(0xFFFFF3B0),
         rotation: -0.02,
-        pinColor: const Color(0xFFD32F2F),
+        pinColor: AppColors.accent,
         onTap: onAdd,
       );
     }
@@ -69,7 +69,7 @@ class _AnnouncementWrap extends StatelessWidget {
             emptyText: '',
             color: const Color(0xFFFFF3B0),
             rotation: _rotationForIndex(i),
-            pinColor: const Color(0xFFD32F2F),
+            pinColor: AppColors.accent,
             onTap: () => onTap(items[i]),
           ),
       ],
@@ -98,7 +98,7 @@ class _GoalWrap extends StatelessWidget {
         emptyText: '＋ タップして追加',
         color: const Color(0xFFCDEFFF),
         rotation: 0.02,
-        pinColor: const Color(0xFFD32F2F),
+        pinColor: AppColors.accent,
         onTap: onAdd,
       );
     }
@@ -115,7 +115,7 @@ class _GoalWrap extends StatelessWidget {
             emptyText: '',
             color: const Color(0xFFCDEFFF),
             rotation: _rotationForIndex(i + 2),
-            pinColor: const Color(0xFFD32F2F),
+            pinColor: AppColors.accent,
             onTap: () => onTap(items[i]),
           ),
       ],
@@ -135,7 +135,7 @@ class _LoadingMemo extends StatelessWidget {
       emptyText: '掲示板を読み込んでいます...',
       color: Color(0xFFFFF8D8),
       rotation: -0.01,
-      pinColor: Color(0xFFD32F2F),
+      pinColor: AppColors.accent,
     );
   }
 }
@@ -156,7 +156,7 @@ class _ErrorMemo extends StatelessWidget {
       emptyText: '',
       color: const Color(0xFFFFD6D6),
       rotation: 0.01,
-      pinColor: const Color(0xFFD32F2F),
+      pinColor: AppColors.accent,
     );
   }
 }

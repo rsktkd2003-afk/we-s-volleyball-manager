@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import 'pin_badge.dart';
 
 class WesBottomNav extends StatelessWidget {
@@ -12,7 +13,7 @@ class WesBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
-  static const Color _paper = Color(0xFFFFFDF7);
+  static const Color _paper = AppColors.paper;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +77,7 @@ class _NavItem extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  static const Color _red = Color(0xFFD32F2F);
+  static const Color _red = AppColors.accent;
   static const Color _textSub = Color(0xFF757575);
 
   @override

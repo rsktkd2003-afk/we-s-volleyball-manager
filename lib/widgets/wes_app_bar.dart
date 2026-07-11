@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 class WesAppBar extends StatelessWidget implements PreferredSizeWidget {
   const WesAppBar({
     super.key,
@@ -12,9 +14,9 @@ class WesAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onTapNotifications;
   final VoidCallback? onTapSettings;
 
-  static const Color _red = Color(0xFFD32F2F);
-  static const Color _paper = Color(0xFFFFFDF7);
-  static const Color _textMain = Color(0xFF333333);
+  static const Color _red = AppColors.accent;
+  static const Color _paper = AppColors.paper;
+  static const Color _textMain = AppColors.textPrimary;
 
   @override
   Size get preferredSize => const Size.fromHeight(76);
@@ -102,8 +104,8 @@ class _NotificationButton extends StatelessWidget {
   final int unreadCount;
   final VoidCallback? onTap;
 
-  static const Color _red = Color(0xFFD32F2F);
-  static const Color _textMain = Color(0xFF333333);
+  static const Color _red = AppColors.accent;
+  static const Color _textMain = AppColors.textPrimary;
 
   @override
   Widget build(BuildContext context) {

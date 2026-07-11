@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../utils/firestore_collections.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -60,7 +62,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> ensureUserDocument(User user) async {
-    final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userRef =
+        FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(user.uid);
     final userDoc = await userRef.get();
 
     if (!userDoc.exists) {

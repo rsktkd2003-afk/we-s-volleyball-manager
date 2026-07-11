@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/player.dart';
+import '../theme/app_colors.dart';
 import 'pin_badge.dart';
 
 /// 掲示板に貼られた縦型プロフィールカード（グリッドセルいっぱいに広がる）。
@@ -46,7 +47,7 @@ class PlayerProfileNoteCard extends StatelessWidget {
             children: [
               Ink(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFDF7),
+                  color: AppColors.paper,
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: const [
                     BoxShadow(
@@ -66,7 +67,7 @@ class PlayerProfileNoteCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Color(0xFFD32F2F),
+                          color: AppColors.accent,
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
                         ),

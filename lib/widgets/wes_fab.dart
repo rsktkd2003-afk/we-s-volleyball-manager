@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 /// 掲示板の世界観に寄せた赤ピン/スタンプ風FAB。挙動は標準FABと同一。
 class WesFab extends StatelessWidget {
   const WesFab({
@@ -27,7 +29,7 @@ class WesFab extends StatelessWidget {
         ],
         gradient: RadialGradient(
           center: Alignment(-0.3, -0.4),
-          colors: [Color(0xFFEF5350), Color(0xFFD32F2F)],
+          colors: [Color(0xFFEF5350), AppColors.accent],
           stops: [0.0, 1.0],
         ),
       ),

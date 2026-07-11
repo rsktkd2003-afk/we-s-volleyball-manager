@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/match_poll.dart';
 import '../providers/match_poll_providers.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_colors.dart';
 import 'match_poll_create_screen.dart';
 import 'match_poll_detail_screen.dart';
 
@@ -55,7 +56,7 @@ class _MatchPollListScreenState extends ConsumerState<MatchPollListScreen> {
               const Text(
                 '練習試合の候補日を出して、みんなで○△×を投票できます。',
                 style: TextStyle(
-                  color: Color(0xFF666666),
+                  color: AppColors.textSecondary,
                   fontSize: 13,
                 ),
               ),
@@ -121,7 +122,7 @@ class _MatchPollListScreenState extends ConsumerState<MatchPollListScreen> {
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFD32F2F),
+                foregroundColor: AppColors.accent,
               ),
               child: const Text('削除'),
             ),
@@ -172,7 +173,7 @@ class _PollCard extends StatelessWidget {
 
     final statusColor = switch (poll.status) {
       'open' => Colors.green,
-      'confirmed' => const Color(0xFFD32F2F),
+      'confirmed' => AppColors.accent,
       _ => Colors.grey,
     };
 
@@ -198,7 +199,7 @@ class _PollCard extends StatelessWidget {
         trailing: _canDelete
             ? IconButton(
                 icon: const Icon(Icons.delete_outline),
-                color: const Color(0xFFD32F2F),
+                color: AppColors.accent,
                 onPressed: onDelete,
               )
             : const Icon(Icons.chevron_right),

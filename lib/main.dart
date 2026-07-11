@@ -8,7 +8,7 @@ import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/firestore_service.dart';
 import 'services/notification_service.dart';
-import 'features/practice/player_link/player_link_screen.dart';
+import 'screens/player_link_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

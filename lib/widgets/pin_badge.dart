@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 /// 画鋲（プッシュピン）風の丸い装飾。
 /// seed を渡すと色・微小角度・位置ずれが index/id から決定的に決まる。
 class PinBadge extends StatelessWidget {
   const PinBadge({
     super.key,
-    this.color = const Color(0xFFD32F2F),
+    this.color = AppColors.accent,
     this.seed,
     this.size = 18,
   });
@@ -15,7 +17,7 @@ class PinBadge extends StatelessWidget {
   final double size;
 
   static const List<Color> _palette = [
-    Color(0xFFD32F2F), // 赤（チームカラー）
+    AppColors.accent, // 赤（チームカラー）
     Color(0xFF1976D2), // 青
     Color(0xFF388E3C), // 緑
     Color(0xFF7B1FA2), // 紫

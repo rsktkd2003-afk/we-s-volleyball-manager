@@ -5,18 +5,18 @@ Future<String?> showPracticeAddMenuDialog(BuildContext context) {
     context: context,
     builder: (context) {
       return AlertDialog(
-        title: const Text('Add Practice'),
+        title: const Text('予定を追加'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: const Icon(Icons.bookmark),
-              title: const Text('Template'),
+              title: const Text('テンプレートから追加'),
               onTap: () => Navigator.pop(context, 'template'),
             ),
             ListTile(
               leading: const Icon(Icons.edit),
-              title: const Text('Custom'),
+              title: const Text('新しく作成'),
               onTap: () => Navigator.pop(context, 'custom'),
             ),
           ],

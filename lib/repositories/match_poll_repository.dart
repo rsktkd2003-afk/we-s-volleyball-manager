@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/match_poll.dart';
 import '../models/match_poll_vote.dart';
+import '../utils/firestore_collections.dart';
 
 class MatchPollRepository {
   MatchPollRepository({
@@ -15,13 +16,13 @@ class MatchPollRepository {
   final FirebaseAuth _auth;
 
   CollectionReference<Map<String, dynamic>> get _polls =>
-      _firestore.collection('match_polls');
+      _firestore.collection(FirestoreCollections.matchPolls);
 
   CollectionReference<Map<String, dynamic>> get _schedules =>
-      _firestore.collection('schedules');
+      _firestore.collection(FirestoreCollections.schedules);
 
   CollectionReference<Map<String, dynamic>> _votes(String pollId) {
-    return _polls.doc(pollId).collection('votes');
+    return _polls.doc(pollId).collection(FirestoreCollections.votes);
   }
 
   Stream<List<MatchPoll>> watchPolls() {

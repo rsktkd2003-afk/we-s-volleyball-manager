@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
-const Color _paper = Color(0xFFFFFDF7);
-const Color _red = Color(0xFFD32F2F);
-const Color _textMain = Color(0xFF333333);
+import '../theme/app_colors.dart';
+
+const Color _paper = AppColors.paper;
+const Color _red = AppColors.accent;
+const Color _textMain = AppColors.textPrimary;
 
 /// お知らせ／今月の目標 共通の編集ボトムシートを開く。
 /// Firestore操作は呼び出し側の onSubmit / onDelete に委譲する。

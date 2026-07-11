@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/player.dart';
+import '../utils/firestore_collections.dart';
 
 class PlayerEditScreen extends StatefulWidget {
   const PlayerEditScreen({super.key, required this.player});
@@ -152,7 +153,7 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
   );
 
   await FirebaseFirestore.instance
-      .collection('players')
+      .collection(FirestoreCollections.players)
       .doc(updatedPlayer.id)
       .update(updatedPlayer.toJson());
 

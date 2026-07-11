@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../utils/date_time_utils.dart';
 import '../utils/practice_options.dart';
-import 'practice_form_fields.dart';
+import '../widgets/practice_form_fields.dart';
 
 class AddPracticeResult {
   final DateTime startDate;

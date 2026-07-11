@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 class BulletinNoteTile extends StatelessWidget {
   const BulletinNoteTile({
     super.key,
@@ -68,7 +70,7 @@ class BulletinNoteTile extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF333333),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     if (body != null && body!.trim().isNotEmpty) ...[

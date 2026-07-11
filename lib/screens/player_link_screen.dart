@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../models/player.dart';
-import '../../../services/firestore_service.dart';
+import '../models/player.dart';
+import '../services/firestore_service.dart';
 
 class PlayerLinkScreen extends StatefulWidget {
   const PlayerLinkScreen({super.key});

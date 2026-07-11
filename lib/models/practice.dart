@@ -6,9 +6,6 @@ class Practice {
   int durationMinutes;
   String type;
 
-  // playerId →
-  // status: present / late / absent
-  // lateTime: 19:30
   Map<String, dynamic> attendance;
 
   Practice({
@@ -22,7 +19,6 @@ class Practice {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'date': date,
       'startTime': startTime,
       'durationMinutes': durationMinutes,
@@ -31,9 +27,12 @@ class Practice {
     };
   }
 
-  factory Practice.fromJson(Map<String, dynamic> json) {
+  factory Practice.fromJson(
+    Map<String, dynamic> json, {
+    String id = '',
+  }) {
     return Practice(
-      id: json['id'] ?? '',
+      id: id.isNotEmpty ? id : json['id'] ?? '',
       date: json['date'] ?? '',
       startTime: json['startTime'] ?? '19:00',
       durationMinutes: json['durationMinutes'] ?? 120,

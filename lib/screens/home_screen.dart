@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../dialogs/add_player_dialog.dart';
 import '../models/player.dart';
+import '../utils/firestore_collections.dart';
 import '../widgets/cork_board_background.dart';
 import '../widgets/player_filter_bar.dart';
 import '../widgets/player_list.dart';
@@ -50,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void listenPlayers() {
     playersSubscription = FirebaseFirestore.instance
-        .collection('players')
+        .collection(FirestoreCollections.players)
         .snapshots()
         .listen(
           (snapshot) {
@@ -110,7 +111,9 @@ class _HomeScreenState extends State<HomeScreen> {
       blockReach: 0.0,
     );
 
-    await FirebaseFirestore.instance.collection('players').add({
+    await FirebaseFirestore.instance
+        .collection(FirestoreCollections.players)
+        .add({
       ...newPlayer.toJson(),
       'ownerUid': FirebaseAuth.instance.currentUser?.uid,
     });
@@ -127,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (result == 'delete') {
       await FirebaseFirestore.instance
-          .collection('players')
+          .collection(FirestoreCollections.players)
           .doc(player.id)
           .delete();
       return;

@@ -7,6 +7,7 @@ import '../models/player_issue.dart';
 import '../models/player_issue_comment.dart';
 import '../providers/player_issue_providers.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_colors.dart';
 
 part 'player_issue_section_cards.dart';
 part 'player_issue_section_detail_sheet.dart';
@@ -95,7 +96,7 @@ class _PlayerIssueSectionState extends ConsumerState<PlayerIssueSection> {
           '選手本人または管理者が課題を追加できます。コメントは全員が書けます。',
           style: TextStyle(
             fontSize: 12,
-            color: Color(0xFF666666),
+            color: AppColors.textSecondary,
           ),
         ),
         const SizedBox(height: 16),
@@ -255,7 +256,7 @@ class _PlayerIssueSectionState extends ConsumerState<PlayerIssueSection> {
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFD32F2F),
+                foregroundColor: AppColors.accent,
               ),
               child: const Text('削除'),
             ),

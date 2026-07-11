@@ -3,13 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/player.dart';
 import '../models/player_link_request.dart';
+import '../utils/firestore_collections.dart';
 
 class FirestoreService {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // users
   static CollectionReference<Map<String, dynamic>> get usersRef =>
-      _db.collection('users');
+      _db.collection(FirestoreCollections.users);
 
   static Future<Map<String, dynamic>?> loadCurrentUserData() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -26,7 +27,7 @@ class FirestoreService {
 
   // players
   static CollectionReference<Map<String, dynamic>> get playersRef =>
-      _db.collection('players');
+      _db.collection(FirestoreCollections.players);
 
   static Future<List<Player>> loadUnlinkedPlayers() async {
     final query = playersRef.where('linkedUid', isNull: true);
@@ -40,7 +41,7 @@ class FirestoreService {
 
   // player link requests
   static CollectionReference<Map<String, dynamic>> get playerLinkRequestsRef =>
-      _db.collection('player_link_requests');
+      _db.collection(FirestoreCollections.playerLinkRequests);
 
   static Future<PlayerLinkRequest?> loadMyPendingPlayerLinkRequest() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;

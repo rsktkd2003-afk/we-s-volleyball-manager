@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../screens/match_poll_list_screen.dart';
+import '../theme/app_colors.dart';
 
 class MatchPollEntryCard extends StatelessWidget {
   const MatchPollEntryCard({
@@ -24,7 +25,7 @@ class MatchPollEntryCard extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFDF7),
+            color: AppColors.paper,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: const Color(0x22D32F2F),
@@ -43,7 +44,7 @@ class MatchPollEntryCard extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFD32F2F),
+                  color: AppColors.accent,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -60,7 +61,7 @@ class MatchPollEntryCard extends StatelessWidget {
                     Text(
                       '練習試合の日程調整',
                       style: TextStyle(
-                        color: Color(0xFF333333),
+                        color: AppColors.textPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -71,7 +72,7 @@ class MatchPollEntryCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Color(0xFF666666),
+                        color: AppColors.textSecondary,
                         fontSize: 12,
                       ),
                     ),
@@ -81,7 +82,7 @@ class MatchPollEntryCard extends StatelessWidget {
               SizedBox(width: 8),
               Icon(
                 Icons.chevron_right,
-                color: Color(0xFFD32F2F),
+                color: AppColors.accent,
               ),
             ],
           ),

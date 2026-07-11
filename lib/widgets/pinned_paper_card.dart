@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import 'pin_badge.dart';
 
 /// コルクボードに大きな紙を画鋲2つで貼った見た目。中身はそのまま差し込む。
@@ -42,7 +43,7 @@ class PinnedPaperCard extends StatelessWidget {
           const Positioned(
             top: -7,
             left: 28,
-            child: PinBadge(color: Color(0xFFD32F2F), size: 20),
+            child: PinBadge(color: AppColors.accent, size: 20),
           ),
           const Positioned(
             top: -7,

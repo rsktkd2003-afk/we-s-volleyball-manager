@@ -31,7 +31,7 @@ class _PollHeader extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               '状態: $statusLabel',
-              style: const TextStyle(color: Color(0xFF666666)),
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -99,7 +99,7 @@ class _CandidateVoteCard extends StatelessWidget {
                   '・$text',
                   style: const TextStyle(
                     fontSize: 12,
-                    color: Color(0xFF666666),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ),

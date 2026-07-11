@@ -30,7 +30,7 @@ class _IssueCard extends StatelessWidget {
         trailing: canModify
             ? IconButton(
                 icon: const Icon(Icons.delete_outline),
-                color: const Color(0xFFD32F2F),
+                color: AppColors.accent,
                 onPressed: onDelete,
               )
             : const Icon(Icons.chevron_right),
@@ -57,7 +57,7 @@ class _EmptyIssueCard extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           child: Text(
             canAdd ? '＋ 改善点を追加' : 'まだ改善点はありません。',
-            style: const TextStyle(color: Color(0xFF666666)),
+            style: const TextStyle(color: AppColors.textSecondary),
           ),
         ),
       ),
