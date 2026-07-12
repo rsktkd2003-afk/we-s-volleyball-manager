@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import 'masking_tape.dart';
 
 class BulletinNoteTile extends StatelessWidget {
   const BulletinNoteTile({
@@ -13,6 +14,8 @@ class BulletinNoteTile extends StatelessWidget {
     required this.rotation,
     required this.pinColor,
     this.onTap,
+    this.showTape = false,
+    this.width = 180,
   });
 
   final String heading;
@@ -24,12 +27,18 @@ class BulletinNoteTile extends StatelessWidget {
   final Color pinColor;
   final VoidCallback? onTap;
 
+  /// 右下にマスキングテープの装飾を追加するか。
+  final bool showTape;
+
+  /// 付箋の幅。
+  final double width;
+
   @override
   Widget build(BuildContext context) {
     final hasItem = title != null && title!.trim().isNotEmpty;
 
     final paper = SizedBox(
-      width: 180,
+      width: width,
       child: Transform.rotate(
         angle: rotation,
         child: Stack(
@@ -128,6 +137,12 @@ class BulletinNoteTile extends StatelessWidget {
                 ),
               ),
             ),
+            if (showTape)
+              const Positioned(
+                bottom: -8,
+                right: -6,
+                child: MaskingTape(angle: 0.5, width: 46, height: 16),
+              ),
           ],
         ),
       ),

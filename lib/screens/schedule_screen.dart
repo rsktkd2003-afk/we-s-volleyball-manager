@@ -23,6 +23,8 @@ import '../widgets/cork_board_background.dart';
 import '../widgets/match_poll_entry_card.dart';
 import '../widgets/pinned_paper_card.dart';
 import '../widgets/schedule_detail_sheet.dart';
+import '../widgets/schedule_goal_note.dart';
+import '../widgets/schedule_memo_note.dart';
 import '../widgets/wes_fab.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -258,56 +260,91 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       child: Column(
         children: [
           const _ScheduleBoardHeading(),
-          BulletinStickyArea(
-            visibleMonth: _visibleMonth,
-            isAdmin: isAdmin,
-          ),
-          const MatchPollEntryCard(),
           SizedBox(
             height: 620,
             width: double.infinity,
             child: PinnedPaperCard(showTape: true, child: _buildCalendar()),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: [
+                const ScheduleMemoNote(),
+                const SizedBox(height: 16),
+                ScheduleGoalNote(visibleMonth: _visibleMonth),
+              ],
+            ),
+          ),
+          const MatchPollEntryCard(),
+          const _BulletinBoardHeading(),
+          BulletinStickyArea(
+            visibleMonth: _visibleMonth,
+            isAdmin: isAdmin,
           ),
         ],
       ),
     );
   }
 
-  /// PC・タブレット(幅600px以上): 従来どおり Expanded で残り領域いっぱいに
-  /// カレンダーを表示。ウィンドウが極端に低い場合のみ最低高さ500pxを保証。
+  /// PC・タブレット(幅600px以上): カレンダーを左、MEMO/今月の目標を
+  /// 右サイドバーに配置。ウィンドウが極端に低い場合のみ最低高さ500pxを保証。
   Widget _buildWideLayout() {
-    return Column(
-      children: [
-        const _ScheduleBoardHeading(),
-        BulletinStickyArea(
-          visibleMonth: _visibleMonth,
-          isAdmin: isAdmin,
-        ),
-        const MatchPollEntryCard(),
-        Expanded(
-          child: PinnedPaperCard(
-            showTape: true,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                const minCalendarHeight = 500.0;
-                final calendar = _buildCalendar();
-                if (constraints.maxHeight >= minCalendarHeight) {
-                  return calendar;
-                }
-                return SingleChildScrollView(
-                  child: SizedBox(
-                    height: math.max(
-                      constraints.maxHeight,
-                      minCalendarHeight,
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const _ScheduleBoardHeading(),
+          SizedBox(
+            height: 620,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: PinnedPaperCard(
+                    showTape: true,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        const minCalendarHeight = 500.0;
+                        final calendar = _buildCalendar();
+                        if (constraints.maxHeight >= minCalendarHeight) {
+                          return calendar;
+                        }
+                        return SingleChildScrollView(
+                          child: SizedBox(
+                            height: math.max(
+                              constraints.maxHeight,
+                              minCalendarHeight,
+                            ),
+                            child: calendar,
+                          ),
+                        );
+                      },
                     ),
-                    child: calendar,
                   ),
-                );
-              },
+                ),
+                SizedBox(
+                  width: 260,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 12, 12),
+                    child: Column(
+                      children: [
+                        const ScheduleMemoNote(),
+                        const SizedBox(height: 20),
+                        ScheduleGoalNote(visibleMonth: _visibleMonth),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-      ],
+          const MatchPollEntryCard(),
+          const _BulletinBoardHeading(),
+          BulletinStickyArea(
+            visibleMonth: _visibleMonth,
+            isAdmin: isAdmin,
+          ),
+        ],
+      ),
     );
   }
 
@@ -435,6 +472,33 @@ class _ScheduleBoardHeading extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Container(width: 56, height: 4, color: AppColors.accent),
+        ],
+      ),
+    );
+  }
+}
+
+class _BulletinBoardHeading extends StatelessWidget {
+  const _BulletinBoardHeading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'BULLETIN BOARD',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Container(width: 40, height: 3, color: AppColors.accent),
         ],
       ),
     );
