@@ -436,8 +436,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   /// 該当キーワードが無い場合は「練習」系として青を使う。
   Color _stickyColorFor(String title) {
     if (title.contains('ウェイト')) return const Color(0xFFFAD4D8); // ピンク
-    if (title.contains('試合')) return const Color(0xFFFFF3B0); // 黄
-    return const Color(0xFFCDEFFF); // 青（練習・公式戦など）
+    if (title.contains('試合') || title.contains('公式戦') || title.contains('大会')) {
+      return const Color(0xFFFFF3B0); // 黄
+    }
+    return const Color(0xFFCDEFFF); // 青（練習など）
   }
 }
 

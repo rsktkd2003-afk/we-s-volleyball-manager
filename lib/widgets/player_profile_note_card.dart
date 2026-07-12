@@ -11,11 +11,15 @@ class PlayerProfileNoteCard extends StatelessWidget {
     required this.player,
     required this.seed,
     required this.onTap,
+    this.isCompact = false,
   });
 
   final Player player;
   final int seed;
   final VoidCallback onTap;
+
+  /// true の場合、スマホ向けに背番号・名前・ポジションのみを表示する。
+  final bool isCompact;
 
   static const List<Color> _pinPalette = [
     AppColors.accent,
@@ -40,8 +44,11 @@ class PlayerProfileNoteCard extends StatelessWidget {
 
   /// 3能力値のうち最も高いものを赤、それ以外を青で強調する。
   Color _barColor(int value) {
-    final best = [player.spike, player.serve, player.reception]
-        .reduce((a, b) => a > b ? a : b);
+    final best = [
+      player.spike,
+      player.serve,
+      player.reception,
+    ].reduce((a, b) => a > b ? a : b);
     return value == best * 10 ? AppColors.accent : const Color(0xFF1976D2);
   }
 
@@ -60,11 +67,7 @@ class PlayerProfileNoteCard extends StatelessWidget {
               left: 22,
               child: Transform.rotate(
                 angle: -0.35,
-                child: Icon(
-                  Icons.push_pin,
-                  size: 20,
-                  color: _pinColor,
-                ),
+                child: Icon(Icons.push_pin, size: 20, color: _pinColor),
               ),
             ),
             Container(
@@ -98,55 +101,57 @@ class PlayerProfileNoteCard extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: AppColors.accent),
-                            ),
-                            child: const Text(
-                              'PLAYER CARD',
-                              style: TextStyle(
-                                color: AppColors.accent,
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.6,
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.accent),
+                              ),
+                              child: const Text(
+                                'PLAYER CARD',
+                                style: TextStyle(
+                                  color: AppColors.accent,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.6,
+                                ),
                               ),
                             ),
-                          ),
-                          if (player.roles.isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                for (final role in player.roles)
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 4),
-                                    child: Tooltip(
-                                      message: PlayerRoles.displayName(role),
-                                      child: Icon(
-                                        PlayerRoles.iconFor(role),
-                                        size: 16,
-                                        color: AppColors.textPrimary,
+                            if (player.roles.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  for (final role in player.roles)
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 4),
+                                      child: Tooltip(
+                                        message: PlayerRoles.displayName(role),
+                                        child: Icon(
+                                          PlayerRoles.iconFor(role),
+                                          size: 16,
+                                          color: AppColors.textPrimary,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                              ],
-                            ),
+                                ],
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Text(
                     player.name,
-                    maxLines: 1,
+                    maxLines: isCompact ? 2 : 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 17,
@@ -157,71 +162,79 @@ class PlayerProfileNoteCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _positionColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          player.position,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _positionColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            player.position,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        player.grade,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 12,
+                      if (!isCompact) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          player.grade,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  const Divider(height: 1, color: Color(0xFFE0DDD6)),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _StatColumn(
-                          label: 'HEIGHT',
-                          value: '${player.height.toStringAsFixed(0)}cm',
+                  if (!isCompact) ...[
+                    const SizedBox(height: 10),
+                    const Divider(height: 1, color: Color(0xFFE0DDD6)),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _StatColumn(
+                            label: 'HEIGHT',
+                            value: '${player.height.toStringAsFixed(0)}cm',
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: _StatColumn(
-                          label: 'REACH',
-                          value: '${player.maxReach.toStringAsFixed(0)}cm',
+                        Expanded(
+                          child: _StatColumn(
+                            label: 'REACH',
+                            value: '${player.maxReach.toStringAsFixed(0)}cm',
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  _AbilityBar(
-                    label: 'Attack',
-                    value: player.spike * 10,
-                    color: _barColor(player.spike * 10),
-                  ),
-                  const SizedBox(height: 4),
-                  _AbilityBar(
-                    label: 'Serve',
-                    value: player.serve * 10,
-                    color: _barColor(player.serve * 10),
-                  ),
-                  const SizedBox(height: 4),
-                  _AbilityBar(
-                    label: 'Receive',
-                    value: player.reception * 10,
-                    color: _barColor(player.reception * 10),
-                  ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    _AbilityBar(
+                      label: 'Attack',
+                      value: player.spike * 10,
+                      color: _barColor(player.spike * 10),
+                    ),
+                    const SizedBox(height: 4),
+                    _AbilityBar(
+                      label: 'Serve',
+                      value: player.serve * 10,
+                      color: _barColor(player.serve * 10),
+                    ),
+                    const SizedBox(height: 4),
+                    _AbilityBar(
+                      label: 'Receive',
+                      value: player.reception * 10,
+                      color: _barColor(player.reception * 10),
+                    ),
+                  ],
                 ],
               ),
             ),

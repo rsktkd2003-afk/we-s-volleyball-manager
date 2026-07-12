@@ -16,33 +16,54 @@ class PlayerList extends StatelessWidget {
     required this.onAddPlayer,
   });
 
+  /// この幅未満はスマホ表示（カード内の情報を絞る）。
+  static const double _mobileBreakpoint = 600;
+
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      padding: EdgeInsets.zero,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 20,
-        crossAxisSpacing: 20,
-        childAspectRatio: 0.78,
-      ),
-      itemCount: players.length + 1,
-      itemBuilder: (context, index) {
-        if (index == players.length) {
-          return NewPlayerCard(onTap: onAddPlayer);
-        }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < _mobileBreakpoint;
 
-        final player = players[index];
+        // スマホ幅: カード最大幅を基準に列数を自動決定（無理な3列固定を避ける）。
+        // 通常のスマホ幅では2列、非常に狭い幅では自動的に1列になる。
+        final gridDelegate = isCompact
+            ? const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 300,
+                mainAxisSpacing: 14,
+                crossAxisSpacing: 14,
+                childAspectRatio: 0.85,
+              )
+            : const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                mainAxisSpacing: 20,
+                crossAxisSpacing: 20,
+                childAspectRatio: 0.78,
+              );
 
-        // id があれば id、無ければ index を seed に（決定的）
-        final seed = player.id.isNotEmpty ? player.id.hashCode : index;
+        return GridView.builder(
+          padding: EdgeInsets.zero,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: gridDelegate,
+          itemCount: players.length + 1,
+          itemBuilder: (context, index) {
+            if (index == players.length) {
+              return NewPlayerCard(onTap: onAddPlayer);
+            }
 
-        return PlayerProfileNoteCard(
-          player: player,
-          seed: seed,
-          onTap: () => onTap(player),
+            final player = players[index];
+
+            // id があれば id、無ければ index を seed に（決定的）
+            final seed = player.id.isNotEmpty ? player.id.hashCode : index;
+
+            return PlayerProfileNoteCard(
+              player: player,
+              seed: seed,
+              isCompact: isCompact,
+              onTap: () => onTap(player),
+            );
+          },
         );
       },
     );
