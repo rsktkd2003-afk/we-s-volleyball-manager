@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/player.dart';
 import '../theme/app_colors.dart';
+import '../utils/player_roles.dart';
 import 'pin_badge.dart';
 
 /// 掲示板に貼られた縦型プロフィールカード（グリッドセルいっぱいに広がる）。
@@ -130,6 +131,28 @@ class PlayerProfileNoteCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (player.roles.isNotEmpty)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final role in player.roles)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Tooltip(
+                            message: PlayerRoles.displayName(role),
+                            child: Icon(
+                              PlayerRoles.iconFor(role),
+                              size: 18,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),

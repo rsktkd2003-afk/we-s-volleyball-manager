@@ -267,6 +267,57 @@ class _PlayerInformationCard extends StatelessWidget {
                 );
               },
             ),
+            if (player.roles.isNotEmpty) ...[
+              const SizedBox(height: 28),
+              const Text(
+                'ROLES',
+                style: TextStyle(
+                  color: Color(0xFF272727),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  for (final role in player.roles)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFCF6),
+                        border: Border.all(
+                          color: const Color(0xFFD8D2C6),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            PlayerRoles.iconFor(role),
+                            size: 16,
+                            color: AppColors.textPrimary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            PlayerRoles.displayName(role),
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: 28),
             const Text(
               'KEY STRENGTHS',

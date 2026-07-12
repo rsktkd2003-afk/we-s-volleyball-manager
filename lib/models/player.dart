@@ -35,6 +35,9 @@ class Player {
   int stamina;
   int gameSense;
 
+  // 役職（内部値の配列。例: ['captain', 'sns']）
+  List<String> roles;
+
   Player({
     this.id = '',
     this.ownerUid = '',
@@ -61,6 +64,7 @@ class Player {
     this.speed = 5,
     this.stamina = 5,
     this.gameSense = 5,
+    this.roles = const [],
   });
 
   double get jumpHeight => maxReach - standingReach;
@@ -93,6 +97,7 @@ class Player {
       'speed': speed,
       'stamina': stamina,
       'gameSense': gameSense,
+      'roles': roles,
     };
   }
 
@@ -123,6 +128,10 @@ class Player {
       speed: json['speed'] ?? 5,
       stamina: json['stamina'] ?? 5,
       gameSense: json['gameSense'] ?? 5,
+      roles: (json['roles'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
     );
   }
 }

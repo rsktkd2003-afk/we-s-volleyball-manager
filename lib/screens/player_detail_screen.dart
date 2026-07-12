@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/player.dart';
 import '../services/position_fit_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/player_roles.dart';
 import '../widgets/ability_radar_chart.dart';
 import '../widgets/pin_badge.dart';
 import '../widgets/player_issue_section.dart';

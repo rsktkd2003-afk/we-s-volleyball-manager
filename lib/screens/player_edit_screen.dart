@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/player.dart';
 import '../utils/firestore_collections.dart';
+import '../utils/player_roles.dart';
 
 class PlayerEditScreen extends StatefulWidget {
   const PlayerEditScreen({super.key, required this.player});
@@ -34,11 +35,15 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
   late final TextEditingController blockController;
   late final TextEditingController mobilityController;
 
+  late Set<String> selectedRoles;
+
   @override
   void initState() {
     super.initState();
 
     final player = widget.player;
+
+    selectedRoles = Set<String>.from(player.roles);
 
     nameController = TextEditingController(text: player.name);
     numberController = TextEditingController(text: player.number.toString());
@@ -150,6 +155,9 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
     speed: widget.player.speed,
     stamina: widget.player.stamina,
     gameSense: widget.player.gameSense,
+
+    // 役職
+    roles: selectedRoles.toList(),
   );
 
   await FirebaseFirestore.instance
@@ -208,6 +216,35 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
           _TextField(controller: tossController, label: 'トス'),
           _TextField(controller: blockController, label: 'ブロック'),
           _TextField(controller: mobilityController, label: '機動力'),
+
+          const SizedBox(height: 24),
+
+          const Text(
+            '役職',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final role in PlayerRoles.all)
+                FilterChip(
+                  avatar: Icon(PlayerRoles.iconFor(role), size: 18),
+                  label: Text(PlayerRoles.displayName(role)),
+                  selected: selectedRoles.contains(role),
+                  onSelected: (selected) {
+                    setState(() {
+                      if (selected) {
+                        selectedRoles.add(role);
+                      } else {
+                        selectedRoles.remove(role);
+                      }
+                    });
+                  },
+                ),
+            ],
+          ),
 
           const SizedBox(height: 24),
 
