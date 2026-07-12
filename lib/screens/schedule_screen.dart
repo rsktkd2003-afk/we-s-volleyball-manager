@@ -198,6 +198,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final shouldReload = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return ScheduleDetailSheet(
           schedule: schedule,
@@ -255,6 +256,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return SingleChildScrollView(
       child: Column(
         children: [
+          const _ScheduleBoardHeading(),
           BulletinStickyArea(
             visibleMonth: _visibleMonth,
             isAdmin: isAdmin,
@@ -275,6 +277,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Widget _buildWideLayout() {
     return Column(
       children: [
+        const _ScheduleBoardHeading(),
         BulletinStickyArea(
           visibleMonth: _visibleMonth,
           isAdmin: isAdmin,
@@ -311,11 +314,36 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       view: CalendarView.month,
       firstDayOfWeek: 1,
       todayHighlightColor: AppColors.accent,
+      backgroundColor: Colors.white,
+      cellBorderColor: const Color(0xFFE3DFD5),
+      headerStyle: const CalendarHeaderStyle(
+        backgroundColor: AppColors.paper,
+        textStyle: TextStyle(
+          color: AppColors.textPrimary,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1,
+        ),
+      ),
+      viewHeaderStyle: const ViewHeaderStyle(
+        backgroundColor: AppColors.paper,
+        dayTextStyle: TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
       dataSource: _dataSource,
       onViewChanged: _onCalendarViewChanged,
       monthViewSettings: const MonthViewSettings(
         appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
         showAgenda: true,
+        monthCellStyle: MonthCellStyle(
+          backgroundColor: Colors.white,
+          trailingDatesBackgroundColor: Color(0xFFF7F6F2),
+          leadingDatesBackgroundColor: Color(0xFFF7F6F2),
+          textStyle: TextStyle(color: AppColors.textPrimary),
+        ),
       ),
       appointmentTextStyle: const TextStyle(
         color: Colors.white,
@@ -328,6 +356,43 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
         _showScheduleDetail(tapped.first as TeamSchedule);
       },
+    );
+  }
+}
+
+class _ScheduleBoardHeading extends StatelessWidget {
+  const _ScheduleBoardHeading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "WE'S VOLLEYBALL CLUB",
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'TEAM SCHEDULE BOARD',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(width: 56, height: 4, color: AppColors.accent),
+        ],
+      ),
     );
   }
 }

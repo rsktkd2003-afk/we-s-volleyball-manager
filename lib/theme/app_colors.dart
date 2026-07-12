@@ -16,4 +16,10 @@ class AppColors {
 
   /// Secondary/muted text color.
   static const Color textSecondary = Color(0xFF666666);
+
+  /// Near-black background used for the top brand header bar.
+  static const Color headerDark = Color(0xFF1A1A1A);
+
+  /// Flat light background behind the player scouting board.
+  static const Color boardBackground = Color(0xFFF2F0EC);
 }

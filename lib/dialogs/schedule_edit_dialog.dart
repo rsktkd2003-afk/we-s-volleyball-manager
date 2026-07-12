@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/team_schedule.dart';
 import '../repositories/schedule_repository.dart';
+import '../theme/app_colors.dart';
 
 Future<void> showEditScheduleDialog(
   BuildContext context,
@@ -21,6 +22,10 @@ Future<void> showEditScheduleDialog(
       return StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
+            backgroundColor: AppColors.paper,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Text('予定編集'),
             content: SingleChildScrollView(
               child: Column(

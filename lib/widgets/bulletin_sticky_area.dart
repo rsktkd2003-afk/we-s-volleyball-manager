@@ -223,6 +223,10 @@ class BulletinStickyArea extends ConsumerWidget {
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: AppColors.paper,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(heading),
           content: SingleChildScrollView(
             child: Column(

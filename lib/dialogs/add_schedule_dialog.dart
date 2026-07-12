@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/schedule_template.dart';
+import '../theme/app_colors.dart';
 import 'template_delete_dialog.dart' as template_delete;
 
 /// 予定追加ダイアログの入力結果。
@@ -65,6 +66,10 @@ Future<AddScheduleInput?> showAddScheduleDialog({
       return StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
+            backgroundColor: AppColors.paper,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             title: const Text('予定追加'),
             content: SingleChildScrollView(
               child: Column(

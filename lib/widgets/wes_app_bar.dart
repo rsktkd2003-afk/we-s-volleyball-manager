@@ -8,134 +8,131 @@ class WesAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.unreadCount = 0,
     this.onTapNotifications,
     this.onTapSettings,
+    this.onTapProfile,
   });
 
   final int unreadCount;
   final VoidCallback? onTapNotifications;
   final VoidCallback? onTapSettings;
-
-  static const Color _red = AppColors.accent;
-  static const Color _paper = AppColors.paper;
-  static const Color _textMain = AppColors.textPrimary;
+  final VoidCallback? onTapProfile;
 
   @override
-  Size get preferredSize => const Size.fromHeight(76);
+  Size get preferredSize => const Size.fromHeight(64);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: false,
-      toolbarHeight: 76,
+      toolbarHeight: 64,
       elevation: 0,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.headerDark,
       surfaceTintColor: Colors.transparent,
-      titleSpacing: 12,
-      title: Container(
-        height: 58,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: _paper,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
-            BoxShadow(
-              blurRadius: 10,
-              offset: Offset(0, 4),
-              color: Color(0x33000000),
+      titleSpacing: 16,
+      title: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: const BoxDecoration(
+              color: AppColors.accent,
+              shape: BoxShape.circle,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const Icon(
+            child: const Icon(
               Icons.sports_volleyball,
-              color: _red,
-              size: 32,
+              color: Colors.white,
+              size: 22,
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: RichText(
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                text: const TextSpan(
-                  children: [
-                    TextSpan(
-                      text: "We's\n",
-                      style: TextStyle(
-                        color: _red,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    TextSpan(
-                      text: 'Volleyball Manager',
-                      style: TextStyle(
-                        color: _textMain,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
+          ),
+          const SizedBox(width: 20),
+          const Expanded(
+            child: Text(
+              "We's Volleyball Manager",
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
               ),
             ),
-            _NotificationButton(
-              unreadCount: unreadCount,
-              onTap: onTapNotifications,
-            ),
-            IconButton(
-              onPressed: onTapSettings,
-              icon: const Icon(Icons.settings),
-              color: _textMain,
-              tooltip: '設定',
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 20),
+          _HeaderIconButton(
+            icon: Icons.notifications_outlined,
+            tooltip: '通知',
+            badgeCount: unreadCount,
+            onTap: onTapNotifications,
+          ),
+          const SizedBox(width: 8),
+          _HeaderIconButton(
+            icon: Icons.settings_outlined,
+            tooltip: '設定',
+            onTap: onTapSettings,
+          ),
+          const SizedBox(width: 8),
+          _HeaderIconButton(
+            icon: Icons.person_outline,
+            tooltip: 'プロフィール',
+            onTap: onTapProfile,
+          ),
+        ],
       ),
     );
   }
 }
 
-class _NotificationButton extends StatelessWidget {
-  const _NotificationButton({
-    required this.unreadCount,
-    required this.onTap,
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({
+    required this.icon,
+    required this.tooltip,
+    this.onTap,
+    this.badgeCount = 0,
   });
 
-  final int unreadCount;
+  final IconData icon;
+  final String tooltip;
   final VoidCallback? onTap;
-
-  static const Color _red = AppColors.accent;
-  static const Color _textMain = AppColors.textPrimary;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        IconButton(
-          onPressed: onTap,
-          icon: const Icon(Icons.notifications_outlined),
-          color: _textMain,
-          tooltip: '通知',
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white24),
+          ),
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            onPressed: onTap,
+            icon: Icon(icon, color: Colors.white, size: 20),
+            tooltip: tooltip,
+          ),
         ),
-        if (unreadCount > 0)
+        if (badgeCount > 0)
           Positioned(
-            right: 7,
-            top: 7,
+            right: -4,
+            top: -4,
             child: Container(
-              constraints: const BoxConstraints(minWidth: 17),
-              height: 17,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+              constraints: const BoxConstraints(minWidth: 16),
+              height: 16,
+              padding: const EdgeInsets.symmetric(horizontal: 3),
               decoration: const BoxDecoration(
-                color: _red,
+                color: AppColors.accent,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
               child: Text(
-                unreadCount > 9 ? '9+' : unreadCount.toString(),
+                badgeCount > 9 ? '9+' : badgeCount.toString(),
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 10,
+                  fontSize: 9,
                   fontWeight: FontWeight.bold,
                 ),
               ),

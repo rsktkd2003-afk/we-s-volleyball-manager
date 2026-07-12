@@ -107,6 +107,10 @@ class _BulletinEditSheetState extends State<BulletinEditSheet> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
+          backgroundColor: _paper,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text('削除しますか？'),
           content: const Text('この内容を削除します。元に戻せません。'),
           actions: [

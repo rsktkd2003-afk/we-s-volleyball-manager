@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../repositories/schedule_repository.dart';
+import '../theme/app_colors.dart';
 
 /// 出欠の入力(参加/遅刻/欠席)と保存・削除ボタン。
 class ScheduleResponseSection extends StatefulWidget {
@@ -242,16 +243,31 @@ class _CountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Column(
-          children: [
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text('$count人', style: const TextStyle(fontSize: 18)),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.paper,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE3DFD5)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$count人',
+            style: const TextStyle(
+              fontSize: 18,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
       ),
     );
   }

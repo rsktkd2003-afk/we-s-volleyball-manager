@@ -5,6 +5,7 @@ import '../models/team_player.dart';
 import '../models/team_schedule.dart';
 import '../repositories/schedule_repository.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_colors.dart';
 import '../utils/date_time_utils.dart';
 import 'schedule_response_section.dart';
 
@@ -36,9 +37,9 @@ class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
     if (!mounted) return;
 
     if (!admin && widget.schedule.createdBy != uid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('この予定を削除できるのは作成者か管理者だけです')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('この予定を削除できるのは作成者か管理者だけです')));
       return;
     }
 
@@ -46,6 +47,10 @@ class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: AppColors.paper,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text('予定を削除'),
           content: const Text('この予定を削除しますか？'),
           actions: [
@@ -76,66 +81,87 @@ class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
 
     return Padding(
       padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              schedule.title,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.paper,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Text(
+                  schedule.title,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  leading: const Icon(Icons.place),
+                  title: Text(
+                    schedule.location.isEmpty ? '場所未設定' : schedule.location,
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.schedule),
+                  title: Text(
+                    '${formatMonthDayTime(schedule.start)} 〜 ${formatTime(schedule.end)}',
+                  ),
+                ),
+                const Divider(),
+                if (schedule.id != null)
+                  ScheduleResponseSection(scheduleId: schedule.id!),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      widget.onEdit(schedule);
+                    },
+                    icon: const Icon(Icons.edit),
+                    label: const Text('予定を編集'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: deleteSchedule,
+                    icon: const Icon(Icons.delete),
+                    label: const Text('この予定を削除'),
+                  ),
+                ),
+                const Divider(),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '出欠一覧',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+                if (schedule.id != null)
+                  ScheduleResponseList(scheduleId: schedule.id!),
+              ],
             ),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: const Icon(Icons.place),
-              title: Text(
-                schedule.location.isEmpty ? '場所未設定' : schedule.location,
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.schedule),
-              title: Text(
-                '${formatMonthDayTime(schedule.start)} 〜 ${formatTime(schedule.end)}',
-              ),
-            ),
-            const Divider(),
-            if (schedule.id != null)
-              ScheduleResponseSection(scheduleId: schedule.id!),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  widget.onEdit(schedule);
-                },
-                icon: const Icon(Icons.edit),
-                label: const Text('予定を編集'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: deleteSchedule,
-                icon: const Icon(Icons.delete),
-                label: const Text('この予定を削除'),
-              ),
-            ),
-            const Divider(),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '出欠一覧',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            if (schedule.id != null)
-              ScheduleResponseList(scheduleId: schedule.id!),
-          ],
+          ),
         ),
       ),
     );

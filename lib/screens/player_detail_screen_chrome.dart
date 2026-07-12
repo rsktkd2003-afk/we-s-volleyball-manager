@@ -60,13 +60,13 @@ class _PaperCard extends StatelessWidget {
           const Positioned(
             top: -8,
             left: -10,
-            child: _MaskingTape(angle: -0.55),
+            child: MaskingTape(angle: -0.55),
           ),
         if (tapeTopRight)
           const Positioned(
             top: -8,
             right: -10,
-            child: _MaskingTape(angle: 0.55),
+            child: MaskingTape(angle: 0.55),
           ),
       ],
     );
@@ -216,31 +216,6 @@ class _UnderlinedDataRow extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _MaskingTape extends StatelessWidget {
-  const _MaskingTape({
-    required this.angle,
-  });
-
-  final double angle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: angle,
-      child: Container(
-        width: 74,
-        height: 22,
-        decoration: BoxDecoration(
-          color: const Color(0xB8E4D095),
-          border: Border.all(
-            color: const Color(0x33A58B4A),
-          ),
-        ),
       ),
     );
   }

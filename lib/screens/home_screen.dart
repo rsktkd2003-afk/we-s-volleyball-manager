@@ -6,13 +6,12 @@ import 'package:flutter/material.dart';
 
 import '../dialogs/add_player_dialog.dart';
 import '../models/player.dart';
+import '../theme/app_colors.dart';
 import '../utils/firestore_collections.dart';
-import '../widgets/cork_board_background.dart';
 import '../widgets/player_filter_bar.dart';
 import '../widgets/player_list.dart';
 import '../widgets/wes_app_bar.dart';
-import '../widgets/wes_bottom_nav.dart';
-import '../widgets/wes_fab.dart';
+import '../widgets/wes_top_tabs.dart';
 import 'player_detail_screen.dart';
 import 'player_edit_screen.dart';
 import 'schedule_screen.dart';
@@ -25,6 +24,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String searchQuery = '';
   String selectedGrade = '全員';
   String selectedPosition = '全員';
   String sortType = '背番号';
@@ -71,6 +71,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Player> getFilteredPlayers() {
     List<Player> result = [...players];
+
+    if (searchQuery.trim().isNotEmpty) {
+      final query = searchQuery.trim().toLowerCase();
+      result = result
+          .where((p) => p.name.toLowerCase().contains(query))
+          .toList();
+    }
 
     if (selectedGrade != '全員') {
       result = result.where((p) => p.grade == selectedGrade).toList();
@@ -150,38 +157,100 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const WesAppBar(unreadCount: 0),
-      body: isPlayerTab ? _buildPlayerTab() : const ScheduleScreen(),
-      floatingActionButton: isPlayerTab
-          ? WesFab(onPressed: addPlayer, tooltip: '選手を追加')
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: WesBottomNav(
-        currentIndex: currentIndex,
-        onTap: (index) => setState(() => currentIndex = index),
+      body: Column(
+        children: [
+          WesTopTabs(
+            currentIndex: currentIndex,
+            onTap: (index) => setState(() => currentIndex = index),
+          ),
+          Expanded(
+            child: isPlayerTab ? _buildPlayerTab() : const ScheduleScreen(),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildPlayerTab() {
-    return CorkBoardBackground(
-      child: Column(
-        children: [
-          PlayerFilterBar(
-            grade: selectedGrade,
-            position: selectedPosition,
-            sortType: sortType,
-            onGradeChanged: (value) => setState(() => selectedGrade = value),
-            onPositionChanged: (value) =>
-                setState(() => selectedPosition = value),
-            onSortChanged: (value) => setState(() => sortType = value),
+    return Container(
+      color: AppColors.boardBackground,
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "WE'S VOLLEYBALL CLUB",
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'PLAYER SCOUTING BOARD',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(width: 56, height: 4, color: AppColors.accent),
+              const SizedBox(height: 24),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 900;
+
+                  final filterPanel = PlayerFilterBar(
+                    searchQuery: searchQuery,
+                    grade: selectedGrade,
+                    position: selectedPosition,
+                    sortType: sortType,
+                    onSearchChanged: (value) =>
+                        setState(() => searchQuery = value),
+                    onGradeChanged: (value) =>
+                        setState(() => selectedGrade = value),
+                    onPositionChanged: (value) =>
+                        setState(() => selectedPosition = value),
+                    onSortChanged: (value) =>
+                        setState(() => sortType = value),
+                  );
+
+                  final grid = PlayerList(
+                    players: getFilteredPlayers(),
+                    onTap: openPlayerDetail,
+                    onAddPlayer: addPlayer,
+                  );
+
+                  if (!isWide) {
+                    return Column(
+                      children: [
+                        filterPanel,
+                        const SizedBox(height: 20),
+                        grid,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: grid),
+                      const SizedBox(width: 20),
+                      SizedBox(width: 260, child: filterPanel),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
-          Expanded(
-            child: PlayerList(
-              players: getFilteredPlayers(),
-              onTap: openPlayerDetail,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
