@@ -15,6 +15,7 @@ import '../models/team_schedule.dart';
 import '../repositories/schedule_repository.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/date_time_utils.dart';
 import '../utils/firestore_collections.dart';
 import '../utils/schedule_utils.dart';
 import '../widgets/bulletin_sticky_area.dart';
@@ -265,7 +266,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           SizedBox(
             height: 620,
             width: double.infinity,
-            child: PinnedPaperCard(child: _buildCalendar()),
+            child: PinnedPaperCard(showTape: true, child: _buildCalendar()),
           ),
         ],
       ),
@@ -285,6 +286,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         const MatchPollEntryCard(),
         Expanded(
           child: PinnedPaperCard(
+            showTape: true,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 const minCalendarHeight = 500.0;
@@ -313,6 +315,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return SfCalendar(
       view: CalendarView.month,
       firstDayOfWeek: 1,
+      headerDateFormat: 'yyyy年M月',
       todayHighlightColor: AppColors.accent,
       backgroundColor: Colors.white,
       cellBorderColor: const Color(0xFFE3DFD5),
@@ -345,11 +348,44 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           textStyle: TextStyle(color: AppColors.textPrimary),
         ),
       ),
-      appointmentTextStyle: const TextStyle(
-        color: Colors.white,
-        fontSize: 13,
-        fontWeight: FontWeight.bold,
-      ),
+      appointmentBuilder: (context, details) {
+        final schedule = details.appointments.first as TeamSchedule;
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 1, vertical: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          decoration: BoxDecoration(
+            color: _stickyColorFor(schedule.title),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          alignment: Alignment.centerLeft,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                schedule.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '${formatTime(schedule.start)}〜${formatTime(schedule.end)}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 9,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
       onTap: (details) {
         final tapped = details.appointments;
         if (tapped == null || tapped.isEmpty) return;
@@ -357,6 +393,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         _showScheduleDetail(tapped.first as TeamSchedule);
       },
     );
+  }
+
+  /// タイトルに含まれるキーワードから付箋の色を決める（画像の配色に準拠）。
+  /// 該当キーワードが無い場合は「練習」系として青を使う。
+  Color _stickyColorFor(String title) {
+    if (title.contains('ウェイト')) return const Color(0xFFFAD4D8); // ピンク
+    if (title.contains('試合')) return const Color(0xFFFFF3B0); // 黄
+    return const Color(0xFFCDEFFF); // 青（練習・公式戦など）
   }
 }
 

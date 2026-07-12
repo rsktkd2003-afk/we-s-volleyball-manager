@@ -38,6 +38,13 @@ class PlayerProfileNoteCard extends StatelessWidget {
   Color get _positionColor =>
       _positionColors[player.position] ?? const Color(0xFF9E9E9E);
 
+  /// 3能力値のうち最も高いものを赤、それ以外を青で強調する。
+  Color _barColor(int value) {
+    final best = [player.spike, player.serve, player.reception]
+        .reduce((a, b) => a > b ? a : b);
+    return value == best * 10 ? AppColors.accent : const Color(0xFF1976D2);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -201,19 +208,19 @@ class PlayerProfileNoteCard extends StatelessWidget {
                   _AbilityBar(
                     label: 'Attack',
                     value: player.spike * 10,
-                    color: AppColors.accent,
+                    color: _barColor(player.spike * 10),
                   ),
                   const SizedBox(height: 4),
                   _AbilityBar(
                     label: 'Serve',
                     value: player.serve * 10,
-                    color: const Color(0xFF1976D2),
+                    color: _barColor(player.serve * 10),
                   ),
                   const SizedBox(height: 4),
                   _AbilityBar(
                     label: 'Receive',
                     value: player.reception * 10,
-                    color: const Color(0xFF388E3C),
+                    color: _barColor(player.reception * 10),
                   ),
                 ],
               ),

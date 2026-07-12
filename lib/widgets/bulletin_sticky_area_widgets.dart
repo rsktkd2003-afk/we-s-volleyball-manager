@@ -1,5 +1,14 @@
 part of 'bulletin_sticky_area.dart';
 
+const _notePalette = [
+  Color(0xFFFAD4D8), // ピンク
+  Color(0xFFFFF3B0), // 黄
+  Color(0xFFC8E6C9), // 緑
+  Color(0xFFCDEFFF), // 青
+];
+
+Color _noteColorForIndex(int index) => _notePalette[index % _notePalette.length];
+
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({
     required this.title,
@@ -67,7 +76,7 @@ class _AnnouncementWrap extends StatelessWidget {
             title: items[i].title,
             body: items[i].body,
             emptyText: '',
-            color: const Color(0xFFFFF3B0),
+            color: _noteColorForIndex(i),
             rotation: _rotationForIndex(i),
             pinColor: AppColors.accent,
             onTap: () => onTap(items[i]),
@@ -113,7 +122,7 @@ class _GoalWrap extends StatelessWidget {
             title: items[i].title,
             body: items[i].body,
             emptyText: '',
-            color: const Color(0xFFCDEFFF),
+            color: _noteColorForIndex(i + 2),
             rotation: _rotationForIndex(i + 2),
             pinColor: AppColors.accent,
             onTap: () => onTap(items[i]),

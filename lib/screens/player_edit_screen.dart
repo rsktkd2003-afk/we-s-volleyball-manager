@@ -220,31 +220,26 @@ class _PlayerEditScreenState extends State<PlayerEditScreen> {
           const SizedBox(height: 24),
 
           const Text(
-            '役職',
+            '役職（複数選択可）',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final role in PlayerRoles.all)
-                FilterChip(
-                  avatar: Icon(PlayerRoles.iconFor(role), size: 18),
-                  label: Text(PlayerRoles.displayName(role)),
-                  selected: selectedRoles.contains(role),
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        selectedRoles.add(role);
-                      } else {
-                        selectedRoles.remove(role);
-                      }
-                    });
-                  },
-                ),
-            ],
-          ),
+          for (final role in PlayerRoles.all)
+            CheckboxListTile(
+              value: selectedRoles.contains(role),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              secondary: Icon(PlayerRoles.iconFor(role), size: 20),
+              title: Text(PlayerRoles.displayName(role)),
+              onChanged: (selected) {
+                setState(() {
+                  if (selected ?? false) {
+                    selectedRoles.add(role);
+                  } else {
+                    selectedRoles.remove(role);
+                  }
+                });
+              },
+            ),
 
           const SizedBox(height: 24),
 

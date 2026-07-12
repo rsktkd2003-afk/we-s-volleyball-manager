@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import 'masking_tape.dart';
 import 'pin_badge.dart';
 
 /// コルクボードに大きな紙を画鋲2つで貼った見た目。中身はそのまま差し込む。
@@ -10,11 +11,15 @@ class PinnedPaperCard extends StatelessWidget {
     required this.child,
     this.margin = const EdgeInsets.fromLTRB(12, 8, 12, 12),
     this.padding = const EdgeInsets.fromLTRB(16, 32, 16, 20),
+    this.showTape = false,
   });
 
   final Widget child;
   final EdgeInsets margin;
   final EdgeInsets padding;
+
+  /// 下端の左右にマスキングテープの装飾を追加するか。
+  final bool showTape;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +55,18 @@ class PinnedPaperCard extends StatelessWidget {
             right: 28,
             child: PinBadge(color: Color(0xFF1976D2), size: 20),
           ),
+          if (showTape) ...[
+            const Positioned(
+              bottom: -10,
+              left: 20,
+              child: MaskingTape(angle: -0.06),
+            ),
+            const Positioned(
+              bottom: -10,
+              right: 20,
+              child: MaskingTape(angle: 0.06),
+            ),
+          ],
         ],
       ),
     );
