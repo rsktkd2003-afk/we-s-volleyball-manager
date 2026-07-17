@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "defaultMode": "default",
+    "ask": [
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(firebase deploy *)",
+      "PowerShell(git commit *)",
+      "PowerShell(git push *)",
+      "PowerShell(firebase deploy *)",
+      "PowerShell(npx firebase-tools deploy *)"
+    ],
+    "deny": [
+      "Bash(git reset --hard *)",
+      "Bash(git clean -fd*)",
+      "Bash(rm -rf *)",
+      "PowerShell(git reset --hard *)",
+      "PowerShell(git clean -fd*)",
+      "PowerShell(Remove-Item -Recurse *)",
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.production)"
+    ]
+  }
+}
