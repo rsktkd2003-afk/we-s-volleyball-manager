@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_riverpod: ^2.6.1
+  flutter_riverpod: ^3.3.2
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.3
   firebase_core: ^4.10.0
