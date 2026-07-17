@@ -40,11 +40,10 @@
 ```powershell
 flutter pub get
 flutter analyze
+flutter test
 flutter build web
 ```
 
-- 関連テストが整備されている場合は`flutter test`も実行する。
-- 現在の`test/widget_test.dart`は初期Counterテストのため、修正されるまで成功を前提にしない。
 - `git diff`で意図しない変更がないことを確認する。
 - 実行できなかった確認項目は、実行したように扱わず明記する。
 
