@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/app_notification_status.dart';
 import '../services/notification_service.dart';
 import '../theme/app_colors.dart';
+import '../utils/notification_preview.dart';
 import '../widgets/cork_board_background.dart';
 import '../widgets/pinned_paper_card.dart';
 
@@ -17,7 +19,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   AppNotificationStatus? notificationStatus;
   bool isLoading = true;
   bool isUpdating = false;
-  bool isSendingTestNotification = false;
+  bool isShowingNotificationPreview = false;
   String? errorMessage;
 
   @override
@@ -82,40 +84,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> sendTestNotification() async {
-    if (isSendingTestNotification) return;
+  Future<void> showNotificationPreview() async {
+    if (isShowingNotificationPreview) return;
 
     setState(() {
-      isSendingTestNotification = true;
+      isShowingNotificationPreview = true;
       errorMessage = null;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('8秒後に送信します。Chromeの別タブへ切り替えてください。'),
-      ),
-    );
-
     try {
-      final result = await NotificationService.sendTestNotification();
+      await showLocalNotificationPreview();
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'テスト通知を${result.successCount}台の端末へ送信しました。',
-          ),
+        const SnackBar(
+          content: Text('この端末にテスト通知を表示しました。'),
         ),
       );
     } catch (error) {
       if (!mounted) return;
 
       setState(() {
-        errorMessage = 'テスト通知の送信に失敗しました: $error';
+        errorMessage = 'テスト通知の表示に失敗しました: $error';
       });
     } finally {
       if (mounted) {
-        setState(() => isSendingTestNotification = false);
+        setState(() => isShowingNotificationPreview = false);
       }
     }
   }
@@ -279,13 +273,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             fontSize: 12,
           ),
         ),
-        if (status.isActive) ...[
+        if (kIsWeb && status.isActive) ...[
           const SizedBox(height: 20),
           FilledButton.icon(
-            onPressed: isSendingTestNotification
+            onPressed: isShowingNotificationPreview
                 ? null
-                : sendTestNotification,
-            icon: isSendingTestNotification
+                : showNotificationPreview,
+            icon: isShowingNotificationPreview
                 ? const SizedBox(
                     width: 18,
                     height: 18,
@@ -293,14 +287,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   )
                 : const Icon(Icons.send_outlined),
             label: Text(
-              isSendingTestNotification
-                  ? '送信準備中...'
-                  : '8秒後にテスト通知を送る',
+              isShowingNotificationPreview
+                  ? '表示中...'
+                  : 'この端末でテスト通知を表示',
             ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'ボタンを押したらChromeの別タブへ切り替えて、バックグラウンド通知を確認してください。',
+            'ブラウザの通知表示だけを確認します。サーバーからの自動送信は含みません。',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.textSecondary,

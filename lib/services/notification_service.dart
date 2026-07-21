@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -17,7 +16,6 @@ class NotificationService {
 
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  static final FirebaseFunctions _functions = FirebaseFunctions.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final SharedPreferencesAsync _preferences = SharedPreferencesAsync();
 
@@ -171,22 +169,6 @@ class NotificationService {
       // 通知の後処理に失敗してもログアウトを妨げない
     } finally {
       _registeredToken = null;
-    }
-  }
-
-  static Future<TestNotificationResult> sendTestNotification() async {
-    try {
-      final response = await _functions
-          .httpsCallable('sendTestNotification')
-          .call();
-      final data = Map<String, dynamic>.from(response.data as Map);
-
-      return TestNotificationResult(
-        successCount: data['successCount'] as int? ?? 0,
-        failureCount: data['failureCount'] as int? ?? 0,
-      );
-    } on FirebaseFunctionsException catch (error) {
-      throw TestNotificationException(_testNotificationErrorMessage(error));
     }
   }
 
@@ -352,37 +334,4 @@ class NotificationService {
     }
   }
 
-  static String _testNotificationErrorMessage(
-    FirebaseFunctionsException error,
-  ) {
-    switch (error.code) {
-      case 'unauthenticated':
-        return '再度ログインしてください。';
-      case 'failed-precondition':
-        return 'この端末の通知トークンが登録されていません。';
-      case 'resource-exhausted':
-        return '30秒待ってから再度お試しください。';
-      default:
-        return error.message ?? 'テスト通知の送信に失敗しました。';
-    }
-  }
-}
-
-class TestNotificationResult {
-  const TestNotificationResult({
-    required this.successCount,
-    required this.failureCount,
-  });
-
-  final int successCount;
-  final int failureCount;
-}
-
-class TestNotificationException implements Exception {
-  const TestNotificationException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
 }

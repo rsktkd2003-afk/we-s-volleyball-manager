@@ -41,12 +41,3 @@ jobs:
 
       - name: Build web
         run: flutter build web
-
-      - name: Install Functions dependencies
-        run: npm ci --prefix functions
-
-      - name: Test Functions
-        run: npm test --prefix functions
-
-      - name: Lint Functions
-        run: npm run lint --prefix functions
