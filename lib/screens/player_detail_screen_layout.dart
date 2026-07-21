@@ -60,6 +60,8 @@ class _CompactLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const issueMemoCard = _IssueMemoCard();
+
     if (!isTablet) {
       return Column(
         children: [
@@ -73,7 +75,7 @@ class _CompactLayout extends StatelessWidget {
           const SizedBox(height: 24),
           _PositionSuitabilitySection(player: player),
           const SizedBox(height: 24),
-          const _IssueMemoCard(),
+          issueMemoCard,
         ],
       );
     }
@@ -104,7 +106,7 @@ class _CompactLayout extends StatelessWidget {
         const SizedBox(height: 24),
         _PositionSuitabilitySection(player: player),
         const SizedBox(height: 24),
-        const _IssueMemoCard(),
+        issueMemoCard,
       ],
     );
   }
