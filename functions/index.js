@@ -1,11 +1,64 @@
 const admin = require('firebase-admin');
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
+const {
+  buildTestNotificationMessage,
+  normalizeTokenDocuments,
+} = require('./notification_helpers');
 
 admin.initializeApp();
 
 const db = admin.firestore();
 const messaging = admin.messaging();
+
+const TEST_NOTIFICATION_DELAY_MS = 8 * 1000;
+const TEST_NOTIFICATION_COOLDOWN_MS = 30 * 1000;
+
+exports.sendTestNotification = onCall(async (request) => {
+  const uid = request.auth?.uid;
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'ログインが必要です。');
+  }
+
+  const tokenSnapshot = await db
+    .collection('users')
+    .doc(uid)
+    .collection('fcmTokens')
+    .get();
+  const tokens = normalizeTokenDocuments(tokenSnapshot.docs);
+
+  if (tokens.length === 0) {
+    throw new HttpsError(
+      'failed-precondition',
+      'このユーザーに通知トークンが登録されていません。',
+    );
+  }
+
+  await reserveTestNotification(uid);
+  await delay(TEST_NOTIFICATION_DELAY_MS);
+
+  let successCount = 0;
+  let failureCount = 0;
+
+  for (const tokenChunk of chunk(tokens, 500)) {
+    const response = await messaging.sendEachForMulticast(
+      buildTestNotificationMessage(tokenChunk),
+    );
+    successCount += response.successCount;
+    failureCount += response.failureCount;
+    await deleteInvalidTokensForUser(uid, tokenChunk, response.responses);
+  }
+
+  if (successCount === 0) {
+    throw new HttpsError(
+      'internal',
+      'テスト通知を送信できませんでした。',
+    );
+  }
+
+  return { successCount, failureCount };
+});
 
 exports.notifyAnnouncementCreated = onDocumentCreated('announcements/{announcementId}', async (event) => {
   const data = event.data?.data();
@@ -189,6 +242,74 @@ async function deleteInvalidTokens(tokens, responses) {
       }
     }
   }
+}
+
+async function deleteInvalidTokensForUser(uid, tokens, responses) {
+  const invalidTokens = getInvalidTokens(tokens, responses);
+  if (invalidTokens.length === 0) return;
+
+  const batch = db.batch();
+  for (const token of invalidTokens) {
+    const tokenRef = db
+      .collection('users')
+      .doc(uid)
+      .collection('fcmTokens')
+      .doc(token);
+    batch.delete(tokenRef);
+  }
+  await batch.commit();
+}
+
+function getInvalidTokens(tokens, responses) {
+  const invalidTokens = [];
+
+  responses.forEach((response, index) => {
+    const code = response.error?.code;
+    if (
+      !response.success &&
+      (code === 'messaging/invalid-registration-token' ||
+        code === 'messaging/registration-token-not-registered')
+    ) {
+      invalidTokens.push(tokens[index]);
+    }
+  });
+
+  return invalidTokens;
+}
+
+async function reserveTestNotification(uid) {
+  const stateRef = db
+    .collection('users')
+    .doc(uid)
+    .collection('notificationState')
+    .doc('test');
+  const now = Date.now();
+
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(stateRef);
+    const lastRequestedAt = snapshot.data()?.lastRequestedAt;
+    const lastRequestedAtMillis = lastRequestedAt?.toMillis?.();
+
+    if (
+      typeof lastRequestedAtMillis === 'number' &&
+      now - lastRequestedAtMillis < TEST_NOTIFICATION_COOLDOWN_MS
+    ) {
+      throw new HttpsError(
+        'resource-exhausted',
+        '30秒待ってから再度お試しください。',
+      );
+    }
+
+    transaction.set(
+      stateRef,
+      { lastRequestedAt: admin.firestore.FieldValue.serverTimestamp() },
+      { merge: true },
+    );
+  });
+}
+
+function delay(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 function getScheduleNotificationTitle(scheduleTitle) {

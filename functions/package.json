@@ -2,6 +2,7 @@
   "name": "functions",
   "scripts": {
     "lint": "eslint .",
+    "test": "node --test",
     "serve": "firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions"
   },

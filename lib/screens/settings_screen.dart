@@ -17,6 +17,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   AppNotificationStatus? notificationStatus;
   bool isLoading = true;
   bool isUpdating = false;
+  bool isSendingTestNotification = false;
   String? errorMessage;
 
   @override
@@ -77,6 +78,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } finally {
       if (mounted) {
         setState(() => isUpdating = false);
+      }
+    }
+  }
+
+  Future<void> sendTestNotification() async {
+    if (isSendingTestNotification) return;
+
+    setState(() {
+      isSendingTestNotification = true;
+      errorMessage = null;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('8秒後に送信します。Chromeの別タブへ切り替えてください。'),
+      ),
+    );
+
+    try {
+      final result = await NotificationService.sendTestNotification();
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'テスト通知を${result.successCount}台の端末へ送信しました。',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = 'テスト通知の送信に失敗しました: $error';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => isSendingTestNotification = false);
       }
     }
   }
@@ -240,6 +279,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
             fontSize: 12,
           ),
         ),
+        if (status.isActive) ...[
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: isSendingTestNotification
+                ? null
+                : sendTestNotification,
+            icon: isSendingTestNotification
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.send_outlined),
+            label: Text(
+              isSendingTestNotification
+                  ? '送信準備中...'
+                  : '8秒後にテスト通知を送る',
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'ボタンを押したらChromeの別タブへ切り替えて、バックグラウンド通知を確認してください。',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
+          ),
+        ],
         if (errorMessage != null) ...[
           const SizedBox(height: 16),
           Container(
