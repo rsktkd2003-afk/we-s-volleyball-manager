@@ -40,4 +40,29 @@ void main() {
 
     expect(tapCount, 1);
   });
+
+  testWidgets('設定ボタンから画面遷移できる', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            appBar: WesAppBar(
+              onTapSettings: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const Scaffold(body: Text('設定画面')),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('設定'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('設定画面'), findsOneWidget);
+  });
 }
