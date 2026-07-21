@@ -46,7 +46,40 @@
 
       const registration = await navigator.serviceWorker.register(
         "firebase-messaging-sw.js",
+        { scope: "firebase-cloud-messaging-push-scope" },
       );
+      const worker =
+        registration.installing || registration.waiting || registration.active;
+
+      if (worker && worker.state !== "activated") {
+        await new Promise((resolve, reject) => {
+          const finish = (result) => {
+            clearTimeout(timeout);
+            worker.removeEventListener("statechange", handleStateChange);
+            result();
+          };
+          const handleStateChange = () => {
+            if (worker.state === "activated") {
+              finish(resolve);
+            } else if (worker.state === "redundant") {
+              finish(() => reject(new Error("通知機能を開始できませんでした。")));
+            }
+          };
+          const timeout = setTimeout(() => {
+            finish(() =>
+              reject(new Error("通知機能の準備がタイムアウトしました。")),
+            );
+          }, 10000);
+
+          worker.addEventListener("statechange", handleStateChange);
+          handleStateChange();
+        });
+      }
+
+      if (!registration.active) {
+        throw new Error("通知機能の準備が完了していません。もう一度お試しください。");
+      }
+
       await registration.showNotification("テスト通知", {
         body: "We's Volleyball Managerの通知表示は正常です。",
         icon: "icons/Icon-192.png",
