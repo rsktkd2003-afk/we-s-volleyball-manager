@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/account_profile.dart';
 import '../utils/account_validation.dart';
 import '../utils/firestore_collections.dart';
+import 'notification_service.dart';
 
 class AccountService {
   AccountService._();
@@ -150,5 +151,8 @@ class AccountService {
     }, SetOptions(merge: true));
   }
 
-  static Future<void> signOut() => _auth.signOut();
+  static Future<void> signOut() async {
+    await NotificationService.detachCurrentUser();
+    await _auth.signOut();
+  }
 }

@@ -43,7 +43,7 @@ class WesAppBar extends StatelessWidget implements PreferredSizeWidget {
               size: 22,
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 12),
           const Expanded(
             child: Text(
               "We's Volleyball Manager",
@@ -58,27 +58,29 @@ class WesAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ),
           ),
-          const SizedBox(width: 20),
-          _HeaderIconButton(
-            icon: Icons.notifications_outlined,
-            tooltip: '通知',
-            badgeCount: unreadCount,
-            onTap: onTapNotifications,
-          ),
-          const SizedBox(width: 8),
-          _HeaderIconButton(
-            icon: Icons.settings_outlined,
-            tooltip: '設定',
-            onTap: onTapSettings,
-          ),
-          const SizedBox(width: 8),
-          _HeaderIconButton(
-            icon: Icons.person_outline,
-            tooltip: 'プロフィール',
-            onTap: onTapProfile,
-          ),
         ],
       ),
+      actions: [
+        _HeaderIconButton(
+          icon: Icons.notifications_outlined,
+          tooltip: '通知',
+          badgeCount: unreadCount,
+          onTap: onTapNotifications,
+        ),
+        const SizedBox(width: 8),
+        _HeaderIconButton(
+          icon: Icons.settings_outlined,
+          tooltip: '設定',
+          onTap: onTapSettings,
+        ),
+        const SizedBox(width: 8),
+        _HeaderIconButton(
+          icon: Icons.person_outline,
+          tooltip: 'プロフィール',
+          onTap: onTapProfile,
+        ),
+        const SizedBox(width: 16),
+      ],
     );
   }
 }

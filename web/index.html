@@ -35,6 +35,26 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script>
+    window.showWesTestNotification = async function () {
+      if (!("serviceWorker" in navigator)) {
+        throw new Error("このブラウザーは通知表示に対応していません。");
+      }
+      if (Notification.permission !== "granted") {
+        throw new Error("ブラウザーの通知を許可してください。");
+      }
+
+      const registration = await navigator.serviceWorker.register(
+        "firebase-messaging-sw.js",
+      );
+      await registration.showNotification("テスト通知", {
+        body: "We's Volleyball Managerの通知表示は正常です。",
+        icon: "icons/Icon-192.png",
+        badge: "icons/Icon-192.png",
+        data: { type: "preview" },
+      });
+    };
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
