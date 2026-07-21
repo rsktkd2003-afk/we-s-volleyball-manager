@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../utils/firestore_collections.dart';
+import '../services/account_service.dart';
+import '../utils/account_validation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,41 +14,46 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final displayNameController = TextEditingController();
 
   bool isLoading = false;
   bool isRegisterMode = false;
   String? errorMessage;
 
   Future<void> submit() async {
+    if (isRegisterMode) {
+      final validationError = validateDisplayName(displayNameController.text);
+      if (validationError != null) {
+        setState(() => errorMessage = validationError);
+        return;
+      }
+    }
+
     setState(() {
       isLoading = true;
       errorMessage = null;
     });
 
     try {
-      UserCredential credential;
-
       if (isRegisterMode) {
-        credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        await AccountService.register(
           email: emailController.text.trim(),
           password: passwordController.text.trim(),
+          displayName: displayNameController.text,
         );
       } else {
-        credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        await AccountService.signIn(
           email: emailController.text.trim(),
           password: passwordController.text.trim(),
         );
       }
-
-      final user = credential.user;
-      if (user != null) {
-        await ensureUserDocument(user);
-      }
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       setState(() {
         errorMessage = convertErrorMessage(e);
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         errorMessage = 'エラーが発生しました: $e';
       });
@@ -59,48 +64,6 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
-  }
-
-  Future<void> ensureUserDocument(User user) async {
-    final userRef =
-        FirebaseFirestore.instance.collection(FirestoreCollections.users).doc(user.uid);
-    final userDoc = await userRef.get();
-
-    if (!userDoc.exists) {
-      await userRef.set({
-        'email': user.email,
-        'displayName': user.displayName ?? '',
-        'role': 'member',
-        'playerId': null,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-      return;
-    }
-
-    final data = userDoc.data() ?? {};
-
-    final updates = <String, dynamic>{
-      'updatedAt': FieldValue.serverTimestamp(),
-    };
-
-    if (!data.containsKey('email')) {
-      updates['email'] = user.email;
-    }
-
-    if (!data.containsKey('displayName')) {
-      updates['displayName'] = user.displayName ?? '';
-    }
-
-    if (!data.containsKey('role')) {
-      updates['role'] = 'member';
-    }
-
-    if (!data.containsKey('playerId') || data['playerId'] == '') {
-      updates['playerId'] = null;
-    }
-
-    await userRef.set(updates, SetOptions(merge: true));
   }
 
   String convertErrorMessage(FirebaseAuthException e) {
@@ -133,6 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    displayNameController.dispose();
     super.dispose();
   }
 
@@ -144,57 +108,87 @@ class _LoginScreenState extends State<LoginScreen> {
     final toggleText = isRegisterMode ? 'ログインはこちら' : '新規登録はこちら';
 
     return Scaffold(
-      body: Center(
-        child: SizedBox(
-          width: 360,
-          child: Padding(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "We's Volleyball Manager",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            child: SizedBox(
+              width: 360,
+              child: AutofillGroup(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "We's Volleyball Manager",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(title, style: const TextStyle(fontSize: 20)),
+                    const SizedBox(height: 24),
+                    if (isRegisterMode) ...[
+                      TextField(
+                        controller: displayNameController,
+                        keyboardType: TextInputType.name,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.name],
+                        decoration: const InputDecoration(
+                          labelText: 'ユーザーネーム',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    TextField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.email],
+                      decoration: const InputDecoration(
+                        labelText: 'メールアドレス',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      textInputAction: TextInputAction.done,
+                      autofillHints: [
+                        isRegisterMode
+                            ? AutofillHints.newPassword
+                            : AutofillHints.password,
+                      ],
+                      onSubmitted: isLoading ? null : (_) => submit(),
+                      decoration: const InputDecoration(
+                        labelText: 'パスワード',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (errorMessage != null)
+                      Text(
+                        errorMessage!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : submit,
+                        child: Text(isLoading ? loadingText : buttonText),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: isLoading ? null : toggleMode,
+                      child: Text(toggleText),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                Text(title, style: const TextStyle(fontSize: 20)),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'メールアドレス',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'パスワード',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (errorMessage != null)
-                  Text(
-                    errorMessage!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: isLoading ? null : submit,
-                    child: Text(isLoading ? loadingText : buttonText),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: isLoading ? null : toggleMode,
-                  child: Text(toggleText),
-                ),
-              ],
+              ),
             ),
           ),
         ),
