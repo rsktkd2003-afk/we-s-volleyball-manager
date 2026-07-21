@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/app_notification_status.dart';
 import '../utils/firestore_collections.dart';
 
 class NotificationService {
@@ -11,32 +15,165 @@ class NotificationService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
+  static final SharedPreferencesAsync _preferences = SharedPreferencesAsync();
 
   static const String _webVapidKey = String.fromEnvironment('FCM_WEB_VAPID_KEY');
+  static const String _notificationsEnabledKey = 'notifications_enabled';
+
+  static StreamSubscription<String>? _tokenRefreshSubscription;
+  static String? _registeredToken;
 
   static Future<void> initialize() async {
     try {
       final user = _auth.currentUser;
       if (user == null) return;
 
+      final preferenceEnabled = await _isPreferenceEnabled();
+      if (!preferenceEnabled) return;
+
       final settings = await _messaging.requestPermission();
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        await _setPreferenceEnabled(false);
         return;
       }
 
-      final token = await _getTokenSafely();
-      if (token == null || token.isEmpty) return;
-
-      await _saveToken(user.uid, token);
-
-      _messaging.onTokenRefresh.listen((newToken) async {
-        final currentUser = _auth.currentUser;
-        if (currentUser == null || newToken.isEmpty) return;
-        await _saveToken(currentUser.uid, newToken);
-      });
+      await _registerCurrentToken(user.uid);
+      await _startTokenRefreshListener();
     } catch (_) {
       // 通知初期化に失敗してもアプリ本体は止めない
     }
+  }
+
+  static Future<AppNotificationStatus> loadStatus() async {
+    final preferenceEnabled = await _isPreferenceEnabled();
+
+    try {
+      final settings = await _messaging.getNotificationSettings();
+      final permission = _mapPermission(settings.authorizationStatus);
+      final permissionGranted =
+          permission == AppNotificationPermission.authorized ||
+          permission == AppNotificationPermission.provisional;
+      final token = preferenceEnabled && permissionGranted
+          ? await _getTokenSafely()
+          : null;
+      if (token != null && token.isNotEmpty) {
+        _registeredToken = token;
+      }
+
+      return AppNotificationStatus(
+        preferenceEnabled: preferenceEnabled,
+        permission: permission,
+        tokenAvailable: token != null && token.isNotEmpty,
+      );
+    } catch (_) {
+      return AppNotificationStatus(
+        preferenceEnabled: preferenceEnabled,
+        permission: AppNotificationPermission.unavailable,
+        tokenAvailable: false,
+      );
+    }
+  }
+
+  static Future<AppNotificationStatus> setEnabled(bool enabled) async {
+    if (!enabled) {
+      await _disableForCurrentDevice();
+      return loadStatus();
+    }
+
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw StateError('ログイン情報が見つかりません');
+    }
+
+    await _setPreferenceEnabled(true);
+    final settings = await _messaging.requestPermission();
+
+    if (settings.authorizationStatus == AuthorizationStatus.denied) {
+      await _setPreferenceEnabled(false);
+      return loadStatus();
+    }
+
+    await _registerCurrentToken(user.uid);
+    await _startTokenRefreshListener();
+    return loadStatus();
+  }
+
+  static Future<void> detachCurrentUser() async {
+    try {
+      await _tokenRefreshSubscription?.cancel();
+      _tokenRefreshSubscription = null;
+
+      final user = _auth.currentUser;
+      final token = await _getExistingTokenSafely();
+      if (user == null || token == null || token.isEmpty) return;
+
+      await _deleteStoredToken(user.uid, token);
+    } catch (_) {
+      // 通知の後処理に失敗してもログアウトを妨げない
+    } finally {
+      _registeredToken = null;
+    }
+  }
+
+  static Future<void> _disableForCurrentDevice() async {
+    final token = await _getExistingTokenSafely();
+    await _setPreferenceEnabled(false);
+    await _tokenRefreshSubscription?.cancel();
+    _tokenRefreshSubscription = null;
+
+    final user = _auth.currentUser;
+
+    if (user != null && token != null && token.isNotEmpty) {
+      try {
+        await _deleteStoredToken(user.uid, token);
+      } catch (_) {
+        // トークン無効化を優先し、古いFirestore記録は送信失敗に委ねる
+      }
+    }
+
+    try {
+      await _messaging.deleteToken();
+    } catch (_) {
+      // 未対応環境でも端末設定の保存は完了させる
+    } finally {
+      _registeredToken = null;
+    }
+  }
+
+  static Future<void> _registerCurrentToken(String uid) async {
+    final token = await _getTokenSafely();
+    if (token == null || token.isEmpty) return;
+
+    await _saveToken(uid, token);
+    _registeredToken = token;
+  }
+
+  static Future<void> _startTokenRefreshListener() async {
+    await _tokenRefreshSubscription?.cancel();
+    _tokenRefreshSubscription = _messaging.onTokenRefresh.listen(
+      (newToken) async {
+        final currentUser = _auth.currentUser;
+        if (currentUser == null || newToken.isEmpty) return;
+
+        try {
+          if (await _isPreferenceEnabled()) {
+            final previousToken = _registeredToken;
+            if (previousToken != null && previousToken != newToken) {
+              try {
+                await _deleteStoredToken(currentUser.uid, previousToken);
+              } catch (_) {
+                // 新しいトークンの保存を優先する
+              }
+            }
+
+            await _saveToken(currentUser.uid, newToken);
+            _registeredToken = newToken;
+          }
+        } catch (_) {
+          // 更新トークンの保存失敗でアプリを止めない
+        }
+      },
+    );
   }
 
   static Future<String?> _getTokenSafely() async {
@@ -53,6 +190,25 @@ class NotificationService {
     }
   }
 
+  static Future<String?> _getExistingTokenSafely() async {
+    if (_registeredToken != null && _registeredToken!.isNotEmpty) {
+      return _registeredToken;
+    }
+
+    try {
+      final settings = await _messaging.getNotificationSettings();
+      final status = settings.authorizationStatus;
+      final permissionGranted =
+          status == AuthorizationStatus.authorized ||
+          status == AuthorizationStatus.provisional;
+      if (!permissionGranted) return null;
+
+      return _getTokenSafely();
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<void> _saveToken(String uid, String token) async {
     await _firestore
         .collection(FirestoreCollections.users)
@@ -64,5 +220,37 @@ class NotificationService {
       'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  static Future<void> _deleteStoredToken(String uid, String token) {
+    return _firestore
+        .collection(FirestoreCollections.users)
+        .doc(uid)
+        .collection(FirestoreCollections.fcmTokens)
+        .doc(token)
+        .delete();
+  }
+
+  static Future<bool> _isPreferenceEnabled() async {
+    return await _preferences.getBool(_notificationsEnabledKey) ?? true;
+  }
+
+  static Future<void> _setPreferenceEnabled(bool enabled) {
+    return _preferences.setBool(_notificationsEnabledKey, enabled);
+  }
+
+  static AppNotificationPermission _mapPermission(
+    AuthorizationStatus status,
+  ) {
+    switch (status) {
+      case AuthorizationStatus.notDetermined:
+        return AppNotificationPermission.notDetermined;
+      case AuthorizationStatus.denied:
+        return AppNotificationPermission.denied;
+      case AuthorizationStatus.authorized:
+        return AppNotificationPermission.authorized;
+      case AuthorizationStatus.provisional:
+        return AppNotificationPermission.provisional;
+    }
   }
 }

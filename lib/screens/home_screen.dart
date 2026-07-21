@@ -16,6 +16,7 @@ import 'player_detail_screen.dart';
 import 'player_edit_screen.dart';
 import 'profile_screen.dart';
 import 'schedule_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -161,11 +162,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> openSettings() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: WesAppBar(
         unreadCount: 0,
+        onTapSettings: openSettings,
         onTapProfile: openProfile,
       ),
       body: Column(
