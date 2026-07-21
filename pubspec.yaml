@@ -15,7 +15,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.3
   firebase_core: ^4.10.0
-  cloud_firestore: ^6.5.0
+  cloud_firestore: ^6.7.1
   table_calendar: ^3.2.0
   syncfusion_flutter_calendar: ^33.2.6
   firebase_auth: ^6.5.2
