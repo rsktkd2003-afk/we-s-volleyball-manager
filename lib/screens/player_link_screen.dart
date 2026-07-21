@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../dialogs/logout_confirmation_dialog.dart';
 import '../models/player.dart';
+import '../services/account_service.dart';
 import '../services/firestore_service.dart';
+import 'profile_screen.dart';
 
 class PlayerLinkScreen extends StatefulWidget {
   const PlayerLinkScreen({super.key});
@@ -13,6 +16,7 @@ class PlayerLinkScreen extends StatefulWidget {
 class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
   bool isLoading = true;
   bool isSubmitting = false;
+  bool isLoggingOut = false;
 
   List<Player> players = [];
   Player? selectedPlayer;
@@ -34,6 +38,7 @@ class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
 
     try {
       final pending = await FirestoreService.loadMyPendingPlayerLinkRequest();
+      if (!mounted) return;
 
       if (pending != null) {
         setState(() {
@@ -46,6 +51,7 @@ class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
       }
 
       final loadedPlayers = await FirestoreService.loadUnlinkedPlayers();
+      if (!mounted) return;
 
       setState(() {
         players = loadedPlayers;
@@ -53,6 +59,8 @@ class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         errorMessage = '読み込みに失敗しました: $e';
         isLoading = false;
@@ -80,6 +88,7 @@ class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
         playerId: player.id,
         playerName: player.name,
       );
+      if (!mounted) return;
 
       setState(() {
         message = '${player.name} への連携申請を送信しました。管理者の承認を待ってください。';
@@ -87,6 +96,8 @@ class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
         selectedPlayer = null;
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         errorMessage = '申請に失敗しました: $e';
       });
@@ -99,6 +110,31 @@ class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
     }
   }
 
+  Future<void> openProfile() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (context) => const ProfileScreen()),
+    );
+  }
+
+  Future<void> logout() async {
+    final confirmed = await showLogoutConfirmationDialog(context);
+    if (!confirmed || !mounted) return;
+
+    setState(() => isLoggingOut = true);
+
+    try {
+      await AccountService.signOut();
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() => isLoggingOut = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ログアウトに失敗しました: $error')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,8 +142,25 @@ class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
         title: const Text('選手データ連携'),
         actions: [
           IconButton(
-            onPressed: isLoading ? null : loadData,
+            onPressed: isLoggingOut ? null : openProfile,
+            tooltip: 'プロフィール',
+            icon: const Icon(Icons.person_outline),
+          ),
+          IconButton(
+            onPressed: isLoading || isLoggingOut ? null : loadData,
+            tooltip: '再読み込み',
             icon: const Icon(Icons.refresh),
+          ),
+          IconButton(
+            onPressed: isLoggingOut ? null : logout,
+            tooltip: 'ログアウト',
+            icon: isLoggingOut
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.logout),
           ),
         ],
       ),

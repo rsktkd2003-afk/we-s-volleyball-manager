@@ -14,6 +14,7 @@ import '../widgets/wes_app_bar.dart';
 import '../widgets/wes_top_tabs.dart';
 import 'player_detail_screen.dart';
 import 'player_edit_screen.dart';
+import 'profile_screen.dart';
 import 'schedule_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -153,10 +154,20 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> openProfile() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (context) => const ProfileScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const WesAppBar(unreadCount: 0),
+      appBar: WesAppBar(
+        unreadCount: 0,
+        onTapProfile: openProfile,
+      ),
       body: Column(
         children: [
           WesTopTabs(

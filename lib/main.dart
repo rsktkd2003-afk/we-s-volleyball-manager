@@ -6,9 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/player_link_screen.dart';
+import 'services/account_service.dart';
 import 'services/firestore_service.dart';
 import 'services/notification_service.dart';
-import 'screens/player_link_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +32,8 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  Future<Widget> _resolveHomeAfterLogin() async {
+  Future<Widget> _resolveHomeAfterLogin(User user) async {
+    await AccountService.ensureUserDocument(user);
     final userData = await FirestoreService.loadCurrentUserData();
 
     if (userData == null) {
@@ -71,7 +73,7 @@ class MyApp extends StatelessWidget {
           }
 
           return FutureBuilder<Widget>(
-            future: _resolveHomeAfterLogin(),
+            future: _resolveHomeAfterLogin(authSnapshot.data!),
             builder: (context, homeSnapshot) {
               if (homeSnapshot.connectionState == ConnectionState.waiting) {
                 return const Scaffold(
