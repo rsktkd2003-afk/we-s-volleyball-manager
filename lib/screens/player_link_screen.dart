@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../dialogs/logout_confirmation_dialog.dart';
 import '../models/player.dart';
+import '../providers/player_link_request_providers.dart';
 import '../services/account_service.dart';
-import '../services/firestore_service.dart';
 import 'profile_screen.dart';
 
-class PlayerLinkScreen extends StatefulWidget {
+class PlayerLinkScreen extends ConsumerStatefulWidget {
   const PlayerLinkScreen({super.key});
 
   @override
-  State<PlayerLinkScreen> createState() => _PlayerLinkScreenState();
+  ConsumerState<PlayerLinkScreen> createState() => _PlayerLinkScreenState();
 }
 
-class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
+class _PlayerLinkScreenState extends ConsumerState<PlayerLinkScreen> {
   bool isLoading = true;
   bool isSubmitting = false;
   bool isLoggingOut = false;
@@ -37,7 +38,8 @@ class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
     });
 
     try {
-      final pending = await FirestoreService.loadMyPendingPlayerLinkRequest();
+      final repository = ref.read(playerLinkRequestRepositoryProvider);
+      final pending = await repository.loadMyPendingRequest();
       if (!mounted) return;
 
       if (pending != null) {
@@ -50,7 +52,7 @@ class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
         return;
       }
 
-      final loadedPlayers = await FirestoreService.loadUnlinkedPlayers();
+      final loadedPlayers = await repository.loadUnlinkedPlayers();
       if (!mounted) return;
 
       setState(() {
@@ -84,7 +86,8 @@ class _PlayerLinkScreenState extends State<PlayerLinkScreen> {
     });
 
     try {
-      await FirestoreService.createPlayerLinkRequest(
+      final repository = ref.read(playerLinkRequestRepositoryProvider);
+      await repository.createRequest(
         playerId: player.id,
         playerName: player.name,
       );

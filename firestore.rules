@@ -1,0 +1,288 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    function isOwner() {
+      return signedIn()
+        && resource.data.createdBy == request.auth.uid;
+    }
+
+    function validCreatedBy() {
+      return signedIn()
+        && request.resource.data.createdBy == request.auth.uid;
+    }
+
+    function createdFieldsUnchanged() {
+      return request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly([
+          'email',
+          'displayName',
+          'role',
+          'playerId',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string
+        && request.resource.data.role == "member"
+        && request.resource.data.playerId == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'email',
+            'displayName',
+            'role',
+            'playerId',
+            'updatedAt'
+          ])
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.displayName is string
+          && request.resource.data.role == resource.data.get('role', 'member')
+          && request.resource.data.playerId == resource.data.get('playerId', null)
+          && request.resource.data.updatedAt == request.time
+        );
+
+      allow delete: if isAdmin();
+
+      match /fcmTokens/{tokenId} {
+        allow read: if false;
+        allow create, update, delete: if signedIn()
+          && request.auth.uid == userId;
+      }
+    }
+
+    match /players/{playerId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.linkedUid == null;
+
+      allow update: if signedIn()
+        && (
+          isAdmin()
+          || request.resource.data.linkedUid == resource.data.get('linkedUid', null)
+        );
+
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.ownerUid == request.auth.uid);
+
+      match /issues/{issueId} {
+        allow read: if signedIn();
+
+        allow create: if signedIn()
+          && validCreatedBy()
+          && request.resource.data.playerId == playerId
+          && (
+            isAdmin()
+            || get(/databases/$(database)/documents/players/$(playerId)).data.linkedUid == request.auth.uid
+          );
+
+        allow update: if signedIn()
+          && createdFieldsUnchanged()
+          && (
+            isAdmin()
+            || resource.data.createdBy == request.auth.uid
+          );
+
+        allow delete: if false;
+
+        match /comments/{commentId} {
+          allow read: if signedIn();
+
+          allow create: if signedIn()
+            && validCreatedBy();
+
+          allow update: if signedIn()
+            && createdFieldsUnchanged()
+            && (
+              isAdmin()
+              || resource.data.createdBy == request.auth.uid
+            );
+
+          allow delete: if false;
+        }
+      }
+    }
+
+    match /player_link_requests/{requestId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+          'uid',
+          'playerId',
+          'playerName',
+          'displayName',
+          'status',
+          'createdAt',
+          'reviewedAt',
+          'reviewedBy'
+        ])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.playerId is string
+        && request.resource.data.playerId.size() > 0
+        && request.resource.data.playerName is string
+        && request.resource.data.playerName.size() > 0
+        && request.resource.data.displayName is string
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.reviewedAt == null
+        && request.resource.data.reviewedBy == null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('playerId', null) == null
+        && exists(/databases/$(database)/documents/players/$(request.resource.data.playerId))
+        && get(/databases/$(database)/documents/players/$(request.resource.data.playerId)).data.name == request.resource.data.playerName
+        && get(/databases/$(database)/documents/players/$(request.resource.data.playerId)).data.get('linkedUid', null) == null;
+
+      allow update: if isAdmin()
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'reviewedAt',
+          'reviewedBy'
+        ])
+        && request.resource.data.status in ['approved', 'rejected']
+        && request.resource.data.reviewedAt == request.time
+        && request.resource.data.reviewedBy == request.auth.uid;
+
+      allow delete: if false;
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && validCreatedBy();
+
+      allow update: if signedIn()
+        && createdFieldsUnchanged()
+        && (
+          isAdmin()
+          || resource.data.createdBy == request.auth.uid
+        );
+
+      allow delete: if signedIn()
+        && (
+          isAdmin()
+          || resource.data.createdBy == request.auth.uid
+        );
+    }
+
+    match /goals/{goalId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && validCreatedBy();
+
+      allow update: if signedIn()
+        && createdFieldsUnchanged()
+        && (
+          isAdmin()
+          || resource.data.createdBy == request.auth.uid
+        );
+
+      allow delete: if signedIn()
+        && (
+          isAdmin()
+          || resource.data.createdBy == request.auth.uid
+        );
+    }
+
+    match /match_polls/{pollId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && validCreatedBy()
+        && request.resource.data.status == "open";
+
+      allow update: if signedIn()
+        && createdFieldsUnchanged()
+        && (
+          (
+            resource.data.status == "open"
+            && request.resource.data.status == "confirmed"
+            && isAdmin()
+          )
+          ||
+          (
+            request.resource.data.status == "deleted"
+            && (
+              isAdmin()
+              || resource.data.createdBy == request.auth.uid
+            )
+          )
+          ||
+          (
+            resource.data.status == "open"
+            && request.resource.data.status == "open"
+            && (
+              isAdmin()
+              || resource.data.createdBy == request.auth.uid
+            )
+          )
+        );
+
+      allow delete: if false;
+
+      match /votes/{voteId} {
+        allow read: if signedIn();
+
+        allow create, update: if signedIn()
+          && voteId == request.auth.uid
+          && request.resource.data.uid == request.auth.uid
+          && get(/databases/$(database)/documents/match_polls/$(pollId)).data.status == "open";
+
+        allow delete: if signedIn()
+          && voteId == request.auth.uid;
+      }
+    }
+
+    match /schedules/{scheduleId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid;
+
+      allow update: if signedIn();
+
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.createdBy == request.auth.uid);
+
+      match /responses/{responseId} {
+        allow read: if signedIn();
+
+        allow create, update, delete: if isAdmin()
+          || (signedIn() && responseId == request.auth.uid);
+      }
+    }
+
+    match /schedule_templates/{templateId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn();
+      allow delete: if isAdmin();
+    }
+  }
+}

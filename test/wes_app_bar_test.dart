@@ -4,18 +4,32 @@ import 'package:volleyball_app/widgets/wes_app_bar.dart';
 
 void main() {
   Widget buildApp({
+    VoidCallback? onTapNotifications,
     VoidCallback? onTapSettings,
     VoidCallback? onTapProfile,
   }) {
     return MaterialApp(
       home: Scaffold(
         appBar: WesAppBar(
+          onTapNotifications: onTapNotifications,
           onTapSettings: onTapSettings,
           onTapProfile: onTapProfile,
         ),
       ),
     );
   }
+
+  testWidgets('通知ボタンのタップを通知する', (tester) async {
+    var tapCount = 0;
+    await tester.pumpWidget(
+      buildApp(onTapNotifications: () => tapCount++),
+    );
+
+    await tester.tap(find.byTooltip('通知'));
+    await tester.pump();
+
+    expect(tapCount, 1);
+  });
 
   testWidgets('設定ボタンのタップを通知する', (tester) async {
     var tapCount = 0;

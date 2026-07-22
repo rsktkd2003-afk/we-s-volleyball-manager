@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'firebase_options.dart';
@@ -32,24 +33,6 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  Future<Widget> _resolveHomeAfterLogin(User user) async {
-    await AccountService.ensureUserDocument(user);
-    final userData = await FirestoreService.loadCurrentUserData();
-
-    if (userData == null) {
-      return const LoginScreen();
-    }
-
-    final role = userData['role'] as String? ?? 'member';
-    final playerId = userData['playerId'] as String?;
-
-    if (role == 'member' && (playerId == null || playerId.isEmpty)) {
-      return const PlayerLinkScreen();
-    }
-
-    return const HomeScreen();
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -72,27 +55,111 @@ class MyApp extends StatelessWidget {
             return const LoginScreen();
           }
 
-          return FutureBuilder<Widget>(
-            future: _resolveHomeAfterLogin(authSnapshot.data!),
-            builder: (context, homeSnapshot) {
-              if (homeSnapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              if (homeSnapshot.hasError) {
-                return Scaffold(
-                  body: Center(
-                    child: Text('ユーザー情報の読み込みに失敗しました: ${homeSnapshot.error}'),
-                  ),
-                );
-              }
-
-              return homeSnapshot.data ?? const LoginScreen();
-            },
-          );
+          return _AuthenticatedHome(user: authSnapshot.data!);
         },
+      ),
+    );
+  }
+}
+
+class _AuthenticatedHome extends StatefulWidget {
+  const _AuthenticatedHome({required this.user});
+
+  final User user;
+
+  @override
+  State<_AuthenticatedHome> createState() => _AuthenticatedHomeState();
+}
+
+class _AuthenticatedHomeState extends State<_AuthenticatedHome> {
+  late Future<void> ensureUserDocument;
+
+  @override
+  void initState() {
+    super.initState();
+    ensureUserDocument = AccountService.ensureUserDocument(widget.user);
+  }
+
+  @override
+  void didUpdateWidget(covariant _AuthenticatedHome oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user.uid != widget.user.uid) {
+      ensureUserDocument = AccountService.ensureUserDocument(widget.user);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: ensureUserDocument,
+      builder: (context, ensureSnapshot) {
+        if (ensureSnapshot.connectionState == ConnectionState.waiting) {
+          return const _LoadingScreen();
+        }
+
+        if (ensureSnapshot.hasError) {
+          return _UserLoadError(error: ensureSnapshot.error);
+        }
+
+        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: FirestoreService.usersRef.doc(widget.user.uid).snapshots(),
+          builder: (context, userSnapshot) {
+            if (userSnapshot.connectionState == ConnectionState.waiting) {
+              return const _LoadingScreen();
+            }
+
+            if (userSnapshot.hasError) {
+              return _UserLoadError(error: userSnapshot.error);
+            }
+
+            final userData = userSnapshot.data?.data();
+            if (userData == null) {
+              return const _UserLoadError(error: 'ユーザー情報が見つかりません');
+            }
+
+            final role = userData['role'] as String? ?? 'member';
+            final playerId = userData['playerId'] as String?;
+
+            if (role == 'member' &&
+                (playerId == null || playerId.isEmpty)) {
+              return const PlayerLinkScreen();
+            }
+
+            return const HomeScreen();
+          },
+        );
+      },
+    );
+  }
+}
+
+class _LoadingScreen extends StatelessWidget {
+  const _LoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class _UserLoadError extends StatelessWidget {
+  const _UserLoadError({required this.error});
+
+  final Object? error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'ユーザー情報の読み込みに失敗しました: $error',
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }

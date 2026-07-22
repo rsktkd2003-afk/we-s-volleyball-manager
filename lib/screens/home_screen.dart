@@ -3,29 +3,32 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../dialogs/add_player_dialog.dart';
 import '../models/player.dart';
+import '../providers/player_link_request_providers.dart';
 import '../theme/app_colors.dart';
 import '../utils/firestore_collections.dart';
 import '../widgets/player_filter_bar.dart';
 import '../widgets/player_list.dart';
 import '../widgets/wes_app_bar.dart';
 import '../widgets/wes_top_tabs.dart';
+import 'notification_center_screen.dart';
 import 'player_detail_screen.dart';
 import 'player_edit_screen.dart';
 import 'profile_screen.dart';
 import 'schedule_screen.dart';
 import 'settings_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   String searchQuery = '';
   String selectedGrade = '全員';
   String selectedPosition = '全員';
@@ -169,11 +172,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> openNotifications() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const NotificationCenterScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isAdmin = ref.watch(currentUserIsAdminProvider).maybeWhen(
+          data: (value) => value,
+          orElse: () => false,
+        );
+    final pendingRequestCount = isAdmin
+        ? ref.watch(pendingPlayerLinkRequestsProvider).maybeWhen(
+              data: (requests) => requests.length,
+              orElse: () => 0,
+            )
+        : 0;
+
     return Scaffold(
       appBar: WesAppBar(
-        unreadCount: 0,
+        unreadCount: pendingRequestCount,
+        onTapNotifications: openNotifications,
         onTapSettings: openSettings,
         onTapProfile: openProfile,
       ),
