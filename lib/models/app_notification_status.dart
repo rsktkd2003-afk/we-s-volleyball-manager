@@ -4,6 +4,7 @@ enum AppNotificationPermission {
   authorized,
   provisional,
   unavailable,
+  webVapidNotConfigured,
 }
 
 class AppNotificationStatus {
@@ -25,7 +26,9 @@ class AppNotificationStatus {
     return preferenceEnabled && permissionGranted && tokenAvailable;
   }
 
-  bool get canChange => permission != AppNotificationPermission.unavailable;
+  bool get canChange =>
+      permission != AppNotificationPermission.unavailable &&
+      permission != AppNotificationPermission.webVapidNotConfigured;
 
   String get permissionLabel {
     switch (permission) {
@@ -39,10 +42,16 @@ class AppNotificationStatus {
         return '一時許可';
       case AppNotificationPermission.unavailable:
         return '利用不可';
+      case AppNotificationPermission.webVapidNotConfigured:
+        return '未設定';
     }
   }
 
   String get description {
+    if (permission == AppNotificationPermission.webVapidNotConfigured) {
+      return 'Web通知の設定が完了していないため、この環境では通知を利用できません。';
+    }
+
     if (!preferenceEnabled) {
       return 'この端末への通知は停止中です。';
     }
@@ -62,6 +71,8 @@ class AppNotificationStatus {
             : '通知トークンを登録できませんでした。';
       case AppNotificationPermission.unavailable:
         return 'この環境では通知設定を利用できません。';
+      case AppNotificationPermission.webVapidNotConfigured:
+        return 'Web通知の設定が完了していないため、この環境では通知を利用できません。';
     }
   }
 }

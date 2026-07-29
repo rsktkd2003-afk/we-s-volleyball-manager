@@ -44,5 +44,20 @@ void main() {
       expect(unavailable.canChange, isFalse);
       expect(unavailable.permissionLabel, '利用不可');
     });
+
+    test('Web VAPID未設定時は専用メッセージを表示し変更不可にする', () {
+      const status = AppNotificationStatus(
+        preferenceEnabled: false,
+        permission: AppNotificationPermission.webVapidNotConfigured,
+        tokenAvailable: false,
+      );
+
+      expect(status.isActive, isFalse);
+      expect(status.canChange, isFalse);
+      expect(
+        status.description,
+        'Web通知の設定が完了していないため、この環境では通知を利用できません。',
+      );
+    });
   });
 }
