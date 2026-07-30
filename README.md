@@ -1,84 +1,195 @@
 # We's Volleyball Manager
 
-チームを一つにまとめ、練習を続けたくなる仕組みを作る。
+> Bring the team together and make it easier to keep practicing.
 
-## Overview
+We's Volleyball Manager is a Flutter and Firebase application built to support the day-to-day operation of a volleyball team. It centralizes player information, schedules, attendance, team notices, goals, and match planning in one shared application.
 
-We's Volleyball Manager は、Flutter と Firebase を用いて開発したバレーボールチーム運営アプリです。
+The project was created from real team-management needs, including missed schedule updates, unclear attendance counts, and information being scattered across chat messages.
 
-代表としてチーム運営を行う中で、
+[Open the web application](https://we-s-volleyball-manager.web.app)
 
-* 練習や試合の出欠確認
-* 予定の共有
-* 選手情報の管理
-
-を LINE 上で行っていましたが、
-
-* 予定の把握漏れ
-* 参加人数が分からない
-* 情報が分散してしまう
-
-といった課題がありました。
-
-そこで、
-
-* チーム運営の効率化
-* 情報の一元管理
-* 選手の成長の可視化
-* モチベーション向上
-
-を目的として、本アプリの開発を行いました。
-
----
+> The current user interface is primarily in Japanese. The application is designed for one shared team and does not use `teamId`-based multi-team isolation.
 
 ## Features
 
-### Player Management
+### Authentication and membership
 
-* 選手情報管理
-* 身体データ管理
-* 能力値管理
-* ポジション適性算出
+- Register and sign in with an email address and password.
+- Maintain a display name and account profile.
+- Use `member` and `admin` roles.
+- Link a user account to an existing player through an administrator-approved request.
+- Sign out while removing the current device's stored notification token where possible.
 
-### Schedule Management
+### Player management
 
-* カレンダー表示
-* 練習予定登録
-* 試合予定登録
-* 出欠登録
-* 遅刻時間登録
-* 遅刻時間未定機能
+- Create and maintain player profiles.
+- Store jersey number, position, grade, dominant hand, physical measurements, and volleyball skill ratings.
+- Search, filter, and sort the player list.
+- View and edit player details.
+- Record player-specific issues and comments.
 
----
+### Schedule and attendance
 
-## Tech Stack
+- View team schedules in a responsive monthly calendar.
+- Create and edit practices, matches, and other events.
+- Create repeated schedules and reusable schedule templates.
+- Record attendance responses, including participation, lateness, absence, and an undecided late-arrival time.
+- View schedules and attendance updates through Firestore real-time synchronization.
 
-* Flutter
-* Dart
-* Firebase Authentication
-* Cloud Firestore
-* Firebase Hosting
+### Team communication and planning
 
----
+- Post shared announcements.
+- Maintain monthly team goals.
+- Create match-date polls and collect one vote per signed-in user.
+- Confirm or close match polls through the supported administrator flow.
+- Review pending player-link requests from the notification center.
 
-## Platforms
+### Device notifications
 
-* Web
-* Android
-* Windows
+- Enable or disable notifications per device.
+- Register Firebase Cloud Messaging tokens under the signed-in user's account.
+- Remove or replace stale device tokens during sign-out, account changes, and token refreshes.
+- Disable the web notification setting safely when no Web Push VAPID public key is configured.
 
----
+## Technology Stack
 
-## Future Plans
+| Area | Technology |
+|---|---|
+| Application | Flutter, Dart, Material 3 |
+| State management | Riverpod |
+| Authentication | Firebase Authentication |
+| Database and real-time updates | Cloud Firestore |
+| Device notifications | Firebase Cloud Messaging |
+| Calendar | Syncfusion Flutter Calendar |
+| Web hosting | Firebase Hosting |
 
-* 成長グラフ
-* シーズン振り返り機能
-* AIコーチ機能
-* 練習メニュー管理
-* 練習メニューレコメンド機能
+## Primary Platforms
 
----
+- Web
+- Android
+- Windows
 
-## Web Application
+Firebase client configuration also exists for additional Flutter targets, but the platforms above are the primary documented targets for this project.
 
-https://we-s-volleyball-manager.web.app
+## Firestore Data Model
+
+The current implementation uses a single-team shared data model. The main collections and subcollections are:
+
+| Path | Purpose |
+|---|---|
+| `users` | Account profile, role, and linked player |
+| `users/{uid}/fcmTokens` | Per-device Firebase Cloud Messaging tokens |
+| `players` | Player profiles and volleyball data |
+| `players/{playerId}/issues` | Player-specific issues |
+| `players/{playerId}/issues/{issueId}/comments` | Issue comments |
+| `player_link_requests` | Requests to link an account to a player |
+| `schedules` | Practices, matches, and other team events |
+| `schedules/{scheduleId}/responses` | Per-user attendance responses |
+| `schedule_templates` | Reusable schedule templates |
+| `announcements` | Shared team notices |
+| `goals` | Team goals |
+| `match_polls` | Match-date polls |
+| `match_polls/{pollId}/votes` | Per-user poll votes |
+
+The app intentionally does not read or write `teamId`. Supporting multiple independent teams would require a separate data-isolation design and revised Firestore Security Rules.
+
+## Requirements
+
+- Flutter SDK compatible with Dart `^3.12.1`
+- A supported browser, Android development environment, or Windows desktop toolchain
+- Firebase CLI for Firebase Hosting or Firestore Rules deployment
+- A Firebase project when using a development environment separate from the configured project
+
+## Local Setup
+
+### Windows PowerShell
+
+```powershell
+git clone https://github.com/rsktkd2003-afk/we-s-volleyball-manager.git
+Set-Location we-s-volleyball-manager
+flutter pub get
+flutter run -d chrome
+```
+
+### macOS or Linux
+
+```bash
+git clone https://github.com/rsktkd2003-afk/we-s-volleyball-manager.git
+cd we-s-volleyball-manager
+flutter pub get
+flutter run -d chrome
+```
+
+The repository contains generated Firebase client configuration. Unless you replace that configuration or use Firebase emulators, a local build may connect to the configured Firebase project. Do not use production data for development tests.
+
+## Common Commands
+
+```powershell
+flutter pub get
+flutter analyze
+flutter build web
+flutter build apk
+flutter build windows
+```
+
+Run only the build commands supported by the current development machine.
+
+## Web Notification Configuration
+
+Web notifications require a Web Push VAPID public key at compile time:
+
+```powershell
+flutter run -d chrome --dart-define=FCM_WEB_VAPID_KEY=YOUR_PUBLIC_VAPID_KEY
+```
+
+For a production web build:
+
+```powershell
+flutter build web --dart-define=FCM_WEB_VAPID_KEY=YOUR_PUBLIC_VAPID_KEY
+```
+
+Only the public VAPID key belongs in the client build. Never include a private VAPID key, Firebase Admin credential, service-account file, or FCM server credential in the application.
+
+## Web Deployment
+
+Confirm the target Firebase project before deployment, then run:
+
+```powershell
+flutter pub get
+flutter analyze
+flutter build web
+firebase deploy --only hosting
+```
+
+Deployment is intentionally separate from merging a pull request.
+
+## Security and Privacy Notes
+
+- The app stores account information, player data, schedules, attendance, messages, goals, polls, and notification tokens in Firebase.
+- Shared team data is available according to the repository's Firestore Security Rules; client-side screens are not an authorization boundary.
+- The current data model is for one team and must not be treated as secure multi-tenant isolation.
+- Player measurements, availability, comments, and account information should be treated as personal data.
+- Avoid storing medical details or other high-risk sensitive information unless an appropriate policy, access model, and retention process are established.
+
+See [SECURITY.md](SECURITY.md) for the current access-control model, reporting process, and known security gaps.
+
+## Current Limitations
+
+- The application is not designed for multiple independent teams.
+- Notification availability depends on the target platform, user permission, and Firebase project configuration.
+- Automated test coverage is currently limited; pull-request checks focus on static analysis and the web build.
+- Firebase console settings and the rules currently deployed to Firebase must be verified separately from the repository.
+
+## Development Workflow
+
+See [DEVELOPMENT_WORKFLOW.md](DEVELOPMENT_WORKFLOW.md) for the branch, review, validation, merge, and deployment process.
+
+Before opening a pull request, run:
+
+```powershell
+flutter pub get
+flutter analyze
+flutter build web
+```
+
+Do not commit service-account credentials, private keys, real user exports, FCM tokens, or screenshots containing personal team information.
