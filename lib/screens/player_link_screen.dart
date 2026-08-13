@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../dialogs/logout_confirmation_dialog.dart';
 import '../models/player.dart';
+import '../models/player_link_request.dart';
 import '../providers/player_link_request_providers.dart';
 import '../services/account_service.dart';
 import 'profile_screen.dart';
@@ -17,10 +18,12 @@ class PlayerLinkScreen extends ConsumerStatefulWidget {
 class _PlayerLinkScreenState extends ConsumerState<PlayerLinkScreen> {
   bool isLoading = true;
   bool isSubmitting = false;
+  bool isCancelling = false;
   bool isLoggingOut = false;
 
   List<Player> players = [];
   Player? selectedPlayer;
+  PlayerLinkRequest? pendingRequest;
   String? message;
   String? errorMessage;
 
@@ -33,6 +36,7 @@ class _PlayerLinkScreenState extends ConsumerState<PlayerLinkScreen> {
   Future<void> loadData() async {
     setState(() {
       isLoading = true;
+      pendingRequest = null;
       message = null;
       errorMessage = null;
     });
@@ -44,6 +48,7 @@ class _PlayerLinkScreenState extends ConsumerState<PlayerLinkScreen> {
 
       if (pending != null) {
         setState(() {
+          pendingRequest = pending;
           message = '現在、${pending.playerName} への連携申請中です。管理者の承認を待ってください。';
           players = [];
           selectedPlayer = null;
@@ -93,11 +98,7 @@ class _PlayerLinkScreenState extends ConsumerState<PlayerLinkScreen> {
       );
       if (!mounted) return;
 
-      setState(() {
-        message = '${player.name} への連携申請を送信しました。管理者の承認を待ってください。';
-        players = [];
-        selectedPlayer = null;
-      });
+      await loadData();
     } catch (e) {
       if (!mounted) return;
 
@@ -108,6 +109,65 @@ class _PlayerLinkScreenState extends ConsumerState<PlayerLinkScreen> {
       if (mounted) {
         setState(() {
           isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> cancelPendingRequest() async {
+    final request = pendingRequest;
+    if (request == null || isCancelling) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('連携申請を取り消す'),
+          content: Text(
+            '「${request.playerName}」への連携申請を取り消しますか？\n取り消した後は、別の選手を選んで再申請できます。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('キャンセル'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('取り消す'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      isCancelling = true;
+      errorMessage = null;
+    });
+
+    try {
+      final repository = ref.read(playerLinkRequestRepositoryProvider);
+      await repository.cancelRequest(request.id);
+      if (!mounted) return;
+
+      await loadData();
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('連携申請を取り消しました')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = '申請の取り消しに失敗しました: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          isCancelling = false;
         });
       }
     }
@@ -201,8 +261,25 @@ class _PlayerLinkScreenState extends ConsumerState<PlayerLinkScreen> {
                             style: const TextStyle(color: Colors.green),
                           ),
                         ),
+                      if (pendingRequest != null) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: isCancelling ? null : cancelPendingRequest,
+                          icon: isCancelling
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.undo),
+                          label: Text(
+                            isCancelling ? '取り消し中...' : '申請を取り消す',
+                          ),
+                        ),
+                      ],
                       if (errorMessage != null)
                         Container(
+                          margin: const EdgeInsets.only(top: 12),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: Colors.red.withValues(alpha: 0.1),
