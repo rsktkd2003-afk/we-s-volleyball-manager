@@ -17,6 +17,8 @@ abstract interface class PlayerLinkRequestRepository {
     required String playerName,
   });
 
+  Future<void> cancelRequest(String requestId);
+
   Future<void> approveRequest(String requestId);
 
   Future<void> rejectRequest(String requestId);
@@ -134,6 +136,30 @@ class FirebasePlayerLinkRequestRepository
     );
 
     await _requests.add(request.toJson());
+  }
+
+  @override
+  Future<void> cancelRequest(String requestId) async {
+    final uid = _requireUid();
+    final requestRef = _requests.doc(requestId);
+    final requestDoc = await requestRef.get();
+    final requestData = requestDoc.data();
+
+    if (requestData == null) {
+      throw StateError('申請が見つかりません');
+    }
+    if (requestData['uid'] != uid) {
+      throw StateError('自分の申請以外は取り消せません');
+    }
+    if (requestData['status'] != 'pending') {
+      throw StateError('この申請はすでに処理済みです');
+    }
+
+    await requestRef.update({
+      'status': 'cancelled',
+      'reviewedAt': FieldValue.serverTimestamp(),
+      'reviewedBy': uid,
+    });
   }
 
   @override
