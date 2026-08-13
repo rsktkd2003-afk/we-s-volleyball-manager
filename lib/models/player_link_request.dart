@@ -8,7 +8,7 @@ class PlayerLinkRequest {
   final String playerName;
   final String displayName;
 
-  final String status; // pending / approved / rejected
+  final String status; // pending / approved / rejected / cancelled
 
   final DateTime? createdAt;
   final DateTime? reviewedAt;
@@ -29,6 +29,7 @@ class PlayerLinkRequest {
   bool get isPending => status == 'pending';
   bool get isApproved => status == 'approved';
   bool get isRejected => status == 'rejected';
+  bool get isCancelled => status == 'cancelled';
 
   Map<String, dynamic> toJson() {
     return {
