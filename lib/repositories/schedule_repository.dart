@@ -84,10 +84,27 @@ class ScheduleRepository {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    final userDoc = await _db
+        .collection(FirestoreCollections.users)
+        .doc(user.uid)
+        .get();
+    final userData = userDoc.data();
+
+    final storedDisplayName =
+        (userData?['displayName'] as String? ?? '').trim();
+    final authDisplayName = (user.displayName ?? '').trim();
+    final displayName = storedDisplayName.isNotEmpty
+        ? storedDisplayName
+        : authDisplayName.isNotEmpty
+            ? authDisplayName
+            : 'ログインユーザー';
+
+    final linkedPlayerId = (userData?['playerId'] as String? ?? '').trim();
+
     await _responses(scheduleId).doc(user.uid).set({
       'uid': user.uid,
-      'playerId': user.uid,
-      'playerName': user.displayName ?? user.email ?? 'ログインユーザー',
+      'playerId': linkedPlayerId.isNotEmpty ? linkedPlayerId : user.uid,
+      'playerName': displayName,
       'status': status,
       'lateTime': lateTime,
       'updatedAt': FieldValue.serverTimestamp(),
