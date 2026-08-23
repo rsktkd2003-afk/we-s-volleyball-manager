@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../models/team_player.dart';
 import '../models/team_schedule.dart';
 import '../repositories/schedule_repository.dart';
 import '../services/firestore_service.dart';
@@ -14,12 +13,10 @@ class ScheduleDetailSheet extends StatefulWidget {
   const ScheduleDetailSheet({
     super.key,
     required this.schedule,
-    required this.players,
     required this.onEdit,
   });
 
   final TeamSchedule schedule;
-  final List<TeamPlayer> players;
   final void Function(TeamSchedule) onEdit;
 
   @override
