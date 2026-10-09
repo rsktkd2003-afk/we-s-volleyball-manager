@@ -43,7 +43,12 @@ class PinnedPaperCard extends StatelessWidget {
               ],
             ),
             clipBehavior: Clip.antiAlias,
-            child: child,
+            // 紙の背景色の上に透明なMaterialを敷き、中のListTile等の
+            // インク(リップル/ホバー)が紙の背後に隠れないようにする。
+            child: Material(
+              type: MaterialType.transparency,
+              child: child,
+            ),
           ),
           const Positioned(
             top: -7,

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../dialogs/add_player_dialog.dart';
 import '../models/player.dart';
 import '../providers/player_link_request_providers.dart';
+import '../providers/player_providers.dart';
 import '../theme/app_colors.dart';
 import '../utils/firestore_collections.dart';
 import '../widgets/player_filter_bar.dart';
@@ -34,47 +33,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String selectedPosition = '全員';
   String sortType = '背番号';
 
-  List<Player> players = [];
-
-  StreamSubscription? playersSubscription;
-
   int currentIndex = 0;
 
   bool get isPlayerTab => currentIndex == 0;
 
-  @override
-  void initState() {
-    super.initState();
-    listenPlayers();
-  }
-
-  @override
-  void dispose() {
-    playersSubscription?.cancel();
-    super.dispose();
-  }
-
-  void listenPlayers() {
-    playersSubscription = FirebaseFirestore.instance
-        .collection(FirestoreCollections.players)
-        .snapshots()
-        .listen(
-          (snapshot) {
-            if (!mounted) return;
-
-            setState(() {
-              players = snapshot.docs
-                  .map((doc) => Player.fromJson(doc.data(), id: doc.id))
-                  .toList();
-            });
-          },
-          onError: (error) {
-            debugPrint('HomeScreen players stream error: $error');
-          },
-        );
-  }
-
-  List<Player> getFilteredPlayers() {
+  List<Player> getFilteredPlayers(List<Player> players) {
     List<Player> result = [...players];
 
     if (searchQuery.trim().isNotEmpty) {
@@ -216,6 +179,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildPlayerTab() {
+    final playersAsync = ref.watch(playersProvider);
+
     return Container(
       color: AppColors.boardBackground,
       child: SafeArea(
@@ -266,10 +231,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         setState(() => sortType = value),
                   );
 
-                  final grid = PlayerList(
-                    players: getFilteredPlayers(),
-                    onTap: openPlayerDetail,
-                    onAddPlayer: addPlayer,
+                  final grid = playersAsync.when(
+                    // 再購読中は直前の一覧を表示し続ける。
+                    skipLoadingOnReload: true,
+                    data: (players) => PlayerList(
+                      players: getFilteredPlayers(players),
+                      onTap: openPlayerDetail,
+                      onAddPlayer: addPlayer,
+                    ),
+                    loading: () => const _PlayersLoading(),
+                    error: (error, _) {
+                      debugPrint('HomeScreen players stream error: $error');
+                      return _PlayersError(
+                        error: error,
+                        onRetry: () => ref.invalidate(playersProvider),
+                      );
+                    },
                   );
 
                   if (!isWide) {
@@ -295,6 +272,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PlayersLoading extends StatelessWidget {
+  const _PlayersLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 48),
+      child: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class _PlayersError extends StatelessWidget {
+  const _PlayersError({required this.error, required this.onRetry});
+
+  final Object error;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Column(
+        children: [
+          Text(
+            '選手データの取得に失敗しました: $error',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('再読み込み'),
+          ),
+        ],
       ),
     );
   }

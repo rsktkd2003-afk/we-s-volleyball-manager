@@ -5,6 +5,26 @@ import '../models/schedule_template.dart';
 import '../models/team_schedule.dart';
 import '../utils/firestore_collections.dart';
 
+/// 予定・テンプレートの購読元。Provider からテスト用実装へ差し替えられる。
+abstract interface class ScheduleReadRepository {
+  Stream<List<TeamSchedule>> watchSchedules();
+
+  Stream<List<ScheduleTemplate>> watchTemplates();
+}
+
+/// 既存の [ScheduleRepository] に委譲する Firestore 実装。
+class FirebaseScheduleReadRepository implements ScheduleReadRepository {
+  const FirebaseScheduleReadRepository();
+
+  @override
+  Stream<List<TeamSchedule>> watchSchedules() =>
+      ScheduleRepository.watchSchedules();
+
+  @override
+  Stream<List<ScheduleTemplate>> watchTemplates() =>
+      ScheduleRepository.watchTemplates();
+}
+
 /// schedules / schedule_templates / 出欠(responses) への
 /// Firestore アクセスを一元化する。
 class ScheduleRepository {

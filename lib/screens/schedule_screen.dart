@@ -1,9 +1,9 @@
-import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../datasources/team_schedule_data_source.dart';
@@ -12,11 +12,12 @@ import '../dialogs/schedule_edit_dialog.dart';
 import '../models/schedule_template.dart';
 import '../models/team_player.dart';
 import '../models/team_schedule.dart';
+import '../providers/player_providers.dart';
+import '../providers/schedule_providers.dart';
 import '../repositories/schedule_repository.dart';
 import '../services/firestore_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/date_time_utils.dart';
-import '../utils/firestore_collections.dart';
 import '../utils/schedule_utils.dart';
 import '../widgets/bulletin_sticky_area.dart';
 import '../widgets/cork_board_background.dart';
@@ -27,14 +28,14 @@ import '../widgets/schedule_goal_note.dart';
 import '../widgets/schedule_memo_note.dart';
 import '../widgets/wes_fab.dart';
 
-class ScheduleScreen extends StatefulWidget {
+class ScheduleScreen extends ConsumerStatefulWidget {
   const ScheduleScreen({super.key});
 
   @override
-  State<ScheduleScreen> createState() => _ScheduleScreenState();
+  ConsumerState<ScheduleScreen> createState() => _ScheduleScreenState();
 }
 
-class _ScheduleScreenState extends State<ScheduleScreen> {
+class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   List<TeamSchedule> schedules = [];
 
   // SfCalendar のデータソースは1インスタンスを保持し、
@@ -43,30 +44,26 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   // 重複や不正レイアウトを誘発することがあるため。
   final TeamScheduleDataSource _dataSource =
       TeamScheduleDataSource(<TeamSchedule>[]);
-  List<ScheduleTemplate> templates = [];
-  List<TeamPlayer> players = [];
-
-  StreamSubscription? _schedulesSub;
-  StreamSubscription? _templatesSub;
-  StreamSubscription? _playersSub;
 
   bool isAdmin = false;
 
   DateTime _visibleMonth =
       DateTime(DateTime.now().year, DateTime.now().month);
 
+  // テンプレート・選手は表示に使わず操作時に参照するだけなので、
+  // build で watch せず、最新値を読み取る。
+  List<ScheduleTemplate> get templates =>
+      ref.read(scheduleTemplatesProvider).valueOrNull ?? const [];
+
+  List<TeamPlayer> get players =>
+      (ref.read(playersProvider).valueOrNull ?? const [])
+          .map((player) => TeamPlayer(id: player.id, name: player.name))
+          .toList();
+
   @override
   void initState() {
     super.initState();
     _init();
-  }
-
-  @override
-  void dispose() {
-    _schedulesSub?.cancel();
-    _templatesSub?.cancel();
-    _playersSub?.cancel();
-    super.dispose();
   }
 
   Future<void> _init() async {
@@ -93,57 +90,62 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     _dataSource.notifyListeners(CalendarDataSourceAction.reset, list);
   }
 
+  // listenManual の購読は State の dispose 時に自動で解除される。
   void _listenSchedules() {
-    _schedulesSub = ScheduleRepository.watchSchedules().listen(
-      (list) {
-        // 切り分け用ログ
-        debugPrint('Schedules: ${list.length}');
-        for (final s in list) {
-          debugPrint('${s.title} ${s.start} - ${s.end}');
-        }
-        _setSchedules(list);
+    ref.listenManual<AsyncValue<List<TeamSchedule>>>(
+      schedulesProvider,
+      (previous, next) {
+        next.whenOrNull(
+          data: (list) {
+            // 切り分け用ログ
+            debugPrint('Schedules: ${list.length}');
+            for (final s in list) {
+              debugPrint('${s.title} ${s.start} - ${s.end}');
+            }
+            _setSchedules(list);
+          },
+          error: (error, _) => _showStreamError(error),
+        );
       },
-      onError: _showStreamError,
+      fireImmediately: true,
     );
 
-    _templatesSub = ScheduleRepository.watchTemplates().listen(
-      (list) {
-        if (mounted) setState(() => templates = list);
+    ref.listenManual<AsyncValue<List<ScheduleTemplate>>>(
+      scheduleTemplatesProvider,
+      (previous, next) {
+        next.whenOrNull(error: (error, _) => _showStreamError(error));
       },
-      onError: _showStreamError,
+      fireImmediately: true,
     );
   }
 
   void _listenPlayers() {
-    _playersSub = FirebaseFirestore.instance
-        .collection(FirestoreCollections.players)
-        .snapshots()
-        .listen(
-          (snapshot) {
-            if (!mounted) return;
-
-            setState(() {
-              players = snapshot.docs
-                  .map(
-                    (doc) => TeamPlayer(
-                      id: doc.id,
-                      name: doc.data()['name'] ?? '',
-                    ),
-                  )
-                  .toList();
-            });
-          },
-          onError: _showStreamError,
-        );
+    ref.listenManual(
+      playersProvider,
+      (previous, next) {
+        next.whenOrNull(error: (error, _) => _showStreamError(error));
+      },
+      fireImmediately: true,
+    );
   }
 
   void _showStreamError(Object error) {
     debugPrint('ScheduleScreen stream error: $error');
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('データの取得に失敗しました: $error')),
-    );
+    void show() {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('データの取得に失敗しました: $error')),
+      );
+    }
+
+    // initState / build 中に呼ばれた場合だけ、フレーム終了後に表示する。
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.idle) {
+      show();
+    } else {
+      SchedulerBinding.instance.addPostFrameCallback((_) => show());
+    }
   }
 
   Future<void> _reloadSchedules() async {
