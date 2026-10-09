@@ -113,8 +113,12 @@ class PlayerProfileNoteCard extends StatelessWidget {
                               decoration: BoxDecoration(
                                 border: Border.all(color: AppColors.accent),
                               ),
+                              // 狭いカード幅で折り返して縦にはみ出さないよう1行に固定する。
                               child: const Text(
                                 'PLAYER CARD',
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.fade,
                                 style: TextStyle(
                                   color: AppColors.accent,
                                   fontSize: 8,

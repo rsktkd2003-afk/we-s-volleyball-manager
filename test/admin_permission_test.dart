@@ -7,9 +7,8 @@ import 'package:volleyball_app/models/player_link_request.dart';
 import 'package:volleyball_app/providers/bulletin_providers.dart';
 import 'package:volleyball_app/providers/current_user_providers.dart';
 import 'package:volleyball_app/providers/player_link_request_providers.dart';
-import 'package:volleyball_app/providers/player_providers.dart';
 import 'package:volleyball_app/repositories/player_link_request_repository.dart';
-import 'package:volleyball_app/screens/home_screen.dart';
+import 'package:volleyball_app/screens/app_shell.dart';
 import 'package:volleyball_app/screens/notification_center_screen.dart';
 
 import 'support/fake_repositories.dart';
@@ -183,13 +182,12 @@ void main() {
       createdAt: DateTime(2026, 7, 22, 10, 30),
     );
 
-    testWidgets('admin → logout → member で HomeScreen に管理者用の件数が残らない',
+    testWidgets('admin → logout → member で AppShell に管理者用の件数が残らない',
         (tester) async {
       await tester.binding.setSurfaceSize(const Size(1280, 2000));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       final userRepository = FakeCurrentUserRepository();
-      final playerRepository = FakePlayerRepository();
       final signedIn = ValueNotifier<bool>(true);
       addTearDown(signedIn.dispose);
       var pendingSubscriptions = 0;
@@ -198,7 +196,6 @@ void main() {
         ProviderScope(
           overrides: [
             currentUserRepositoryProvider.overrideWithValue(userRepository),
-            playerRepositoryProvider.overrideWithValue(playerRepository),
             pendingPlayerLinkRequestsProvider.overrideWith((ref) {
               pendingSubscriptions++;
               return Stream.value([request]);
@@ -208,7 +205,7 @@ void main() {
             home: ValueListenableBuilder<bool>(
               valueListenable: signedIn,
               builder: (context, value, _) => value
-                  ? const HomeScreen()
+                  ? const AppShell()
                   : const Scaffold(body: Text('ログイン')),
             ),
           ),
@@ -219,12 +216,11 @@ void main() {
       await tester.pump();
       await tester.pump();
       userRepository.docFor('admin-1').add({'role': 'admin'});
-      playerRepository.last.add(<Player>[]);
       await tester.pumpAndSettle();
       expect(find.text('1'), findsOneWidget);
       expect(pendingSubscriptions, 1);
 
-      // ログアウト: main.dart と同様に HomeScreen を破棄する。
+      // ログアウト: main.dart と同様に AppShell を破棄する。
       userRepository.auth.add(null);
       signedIn.value = false;
       await tester.pumpAndSettle();
@@ -237,7 +233,6 @@ void main() {
       expect(find.text('1'), findsNothing);
 
       userRepository.docFor('member-1').add({'role': 'member', 'playerId': 'p1'});
-      playerRepository.last.add(<Player>[]);
       await tester.pumpAndSettle();
 
       expect(find.text('1'), findsNothing);

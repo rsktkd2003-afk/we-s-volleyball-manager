@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:volleyball_app/providers/player_link_request_providers.dart';
 import 'package:volleyball_app/providers/player_providers.dart';
-import 'package:volleyball_app/screens/home_screen.dart';
+import 'package:volleyball_app/screens/members_screen.dart';
 
 import 'support/fake_repositories.dart';
 
@@ -18,9 +17,8 @@ void main() {
     return ProviderScope(
       overrides: [
         playerRepositoryProvider.overrideWithValue(repository),
-        currentUserIsAdminProvider.overrideWith((ref) async => false),
       ],
-      child: const MaterialApp(home: HomeScreen()),
+      child: const MaterialApp(home: Scaffold(body: MembersScreen())),
     );
   }
 
@@ -97,7 +95,8 @@ void main() {
 
   testWidgets('画面が破棄されると選手データの購読を解除する', (tester) async {
     await setLargeSurface(tester);
-    // ログアウト時に main.dart が HomeScreen を LoginScreen に差し替える状況を再現する。
+    // ログアウト時に main.dart が AppShell(MembersScreen を含む)を
+    // LoginScreen に差し替える状況を再現する。
     final signedIn = ValueNotifier<bool>(true);
     addTearDown(signedIn.dispose);
 
@@ -105,13 +104,12 @@ void main() {
       ProviderScope(
         overrides: [
           playerRepositoryProvider.overrideWithValue(repository),
-          currentUserIsAdminProvider.overrideWith((ref) async => false),
         ],
         child: MaterialApp(
           home: ValueListenableBuilder<bool>(
             valueListenable: signedIn,
             builder: (context, value, _) => value
-                ? const HomeScreen()
+                ? const Scaffold(body: MembersScreen())
                 : const Scaffold(body: Text('ログイン')),
           ),
         ),

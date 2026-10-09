@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'firebase_options.dart';
-import 'screens/home_screen.dart';
+import 'screens/app_shell.dart';
 import 'screens/login_screen.dart';
 import 'screens/player_link_screen.dart';
 import 'services/account_service.dart';
@@ -125,7 +125,7 @@ class _AuthenticatedHomeState extends State<_AuthenticatedHome> {
               return const PlayerLinkScreen();
             }
 
-            return const HomeScreen();
+            return const AppShell();
           },
         );
       },
