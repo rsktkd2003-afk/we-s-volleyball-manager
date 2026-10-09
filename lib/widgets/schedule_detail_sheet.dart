@@ -33,7 +33,15 @@ class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
     final scheduleId = widget.schedule.id;
     if (scheduleId == null || uid == null) return;
 
-    final admin = await FirestoreService.isCurrentUserAdmin();
+    // 削除直前にサーバーの最新 role を確認する。取得できない場合は
+    // 管理者として扱わない(作成者本人の削除は従来通り可能)。
+    bool admin;
+    try {
+      admin = await FirestoreService.isCurrentUserAdmin();
+    } catch (error) {
+      debugPrint('ScheduleDetailSheet admin check error: $error');
+      admin = false;
+    }
     if (!mounted) return;
 
     if (!admin && widget.schedule.createdBy != uid) {

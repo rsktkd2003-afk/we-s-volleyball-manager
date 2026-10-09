@@ -232,8 +232,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   );
 
                   final grid = playersAsync.when(
-                    // 再購読中は直前の一覧を表示し続ける。
-                    skipLoadingOnReload: true,
                     data: (players) => PlayerList(
                       players: getFilteredPlayers(players),
                       onTap: openPlayerDetail,

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/match_poll.dart';
 import '../providers/match_poll_providers.dart';
-import '../services/firestore_service.dart';
+import '../providers/player_link_request_providers.dart';
 import '../theme/app_colors.dart';
 import 'match_poll_create_screen.dart';
 import 'match_poll_detail_screen.dart';
@@ -18,25 +18,14 @@ class MatchPollListScreen extends ConsumerStatefulWidget {
 }
 
 class _MatchPollListScreenState extends ConsumerState<MatchPollListScreen> {
-  bool _isAdmin = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRole();
-  }
-
-  Future<void> _loadRole() async {
-    final admin = await FirestoreService.isCurrentUserAdmin();
-    if (!mounted) return;
-    setState(() {
-      _isAdmin = admin;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final pollsAsync = ref.watch(matchPollsProvider);
+    // 権限の読み込み中・エラー時は管理者として扱わない。
+    final isAdmin = ref.watch(currentUserIsAdminProvider).maybeWhen(
+          data: (value) => value,
+          orElse: () => false,
+        );
 
     return Scaffold(
       appBar: AppBar(
@@ -64,7 +53,7 @@ class _MatchPollListScreenState extends ConsumerState<MatchPollListScreen> {
               for (final poll in polls)
                 _PollCard(
                   poll: poll,
-                  isAdmin: _isAdmin,
+                  isAdmin: isAdmin,
                   currentUid: FirebaseAuth.instance.currentUser?.uid,
                   onTap: () => _openDetailScreen(poll),
                   onDelete: () => _softDeletePoll(poll),
@@ -99,10 +88,7 @@ class _MatchPollListScreenState extends ConsumerState<MatchPollListScreen> {
   Future<void> _openDetailScreen(MatchPoll poll) async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => MatchPollDetailScreen(
-          pollId: poll.id,
-          isAdmin: _isAdmin,
-        ),
+        builder: (_) => MatchPollDetailScreen(pollId: poll.id),
       ),
     );
   }

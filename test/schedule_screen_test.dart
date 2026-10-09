@@ -5,6 +5,7 @@ import 'package:volleyball_app/models/announcement.dart';
 import 'package:volleyball_app/models/team_goal.dart';
 import 'package:volleyball_app/models/team_schedule.dart';
 import 'package:volleyball_app/providers/bulletin_providers.dart';
+import 'package:volleyball_app/providers/current_user_providers.dart';
 import 'package:volleyball_app/providers/player_providers.dart';
 import 'package:volleyball_app/providers/schedule_providers.dart';
 import 'package:volleyball_app/screens/schedule_screen.dart';
@@ -14,11 +15,13 @@ import 'support/fake_repositories.dart';
 void main() {
   late FakeScheduleReadRepository scheduleRepository;
   late FakePlayerRepository playerRepository;
+  late FakeCurrentUserRepository userRepository;
   late ValueNotifier<bool> visible;
 
   setUp(() {
     scheduleRepository = FakeScheduleReadRepository();
     playerRepository = FakePlayerRepository();
+    userRepository = FakeCurrentUserRepository()..auth.add('member-1');
     visible = ValueNotifier<bool>(true);
   });
 
@@ -33,6 +36,7 @@ void main() {
         overrides: [
           scheduleReadRepositoryProvider.overrideWithValue(scheduleRepository),
           playerRepositoryProvider.overrideWithValue(playerRepository),
+          currentUserRepositoryProvider.overrideWithValue(userRepository),
           announcementsProvider.overrideWith(
             (ref) => Stream.value(const <Announcement>[]),
           ),
@@ -52,7 +56,6 @@ void main() {
     );
   }
 
-  /// 管理者判定(FirestoreService)はテスト環境では失敗しSnackBarを出すため、
   /// SnackBarを順に消化しながら対象の文言が表示されるか確認する。
   Future<bool> waitForSnackBarText(WidgetTester tester, String text) async {
     for (var i = 0; i < 4; i++) {
@@ -116,6 +119,16 @@ void main() {
       await waitForSnackBarText(tester, 'schedules-unavailable'),
       isTrue,
     );
+  });
+
+  testWidgets('管理者判定の取得エラーを従来通りSnackBarで通知する', (tester) async {
+    await pumpScreen(tester);
+    await tester.pump();
+    await tester.pump();
+
+    userRepository.docFor('member-1').addError(StateError('user-doc-error'));
+
+    expect(await waitForSnackBarText(tester, 'user-doc-error'), isTrue);
   });
 
   testWidgets('画面が破棄されると予定・テンプレート・選手の購読を解除する', (tester) async {

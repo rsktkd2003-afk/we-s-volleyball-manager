@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/match_poll.dart';
 import '../models/match_poll_vote.dart';
 import '../providers/match_poll_providers.dart';
+import '../providers/player_link_request_providers.dart';
 import '../theme/app_colors.dart';
 
 part 'match_poll_detail_screen_widgets.dart';
@@ -13,11 +14,9 @@ class MatchPollDetailScreen extends ConsumerStatefulWidget {
   const MatchPollDetailScreen({
     super.key,
     required this.pollId,
-    required this.isAdmin,
   });
 
   final String pollId;
-  final bool isAdmin;
 
   @override
   ConsumerState<MatchPollDetailScreen> createState() =>
@@ -134,6 +133,16 @@ class _MatchPollDetailScreenState extends ConsumerState<MatchPollDetailScreen> {
 
     if (ok != true) return;
 
+    // ダイアログ表示中に権限が変わった場合に備え、実行直前に再確認する。
+    final isAdmin = await confirmCurrentUserIsAdmin(ref);
+    if (!mounted) return;
+    if (!isAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('管理者権限を確認できないため、日程を確定できません')),
+      );
+      return;
+    }
+
     try {
       await ref.read(matchPollRepositoryProvider).confirmPoll(
             poll: poll,
@@ -156,6 +165,11 @@ class _MatchPollDetailScreenState extends ConsumerState<MatchPollDetailScreen> {
   Widget build(BuildContext context) {
     final pollAsync = ref.watch(matchPollProvider(widget.pollId));
     final votesAsync = ref.watch(matchPollVotesProvider(widget.pollId));
+    // 権限の読み込み中・エラー時は管理者として扱わない。
+    final isAdmin = ref.watch(currentUserIsAdminProvider).maybeWhen(
+          data: (value) => value,
+          orElse: () => false,
+        );
 
     return Scaffold(
       appBar: AppBar(
@@ -181,7 +195,7 @@ class _MatchPollDetailScreenState extends ConsumerState<MatchPollDetailScreen> {
                       poll: poll,
                       candidate: candidate,
                       votes: votes,
-                      isAdmin: widget.isAdmin,
+                      isAdmin: isAdmin,
                       choice: _choices[candidate.id] ?? 'ng',
                       commentCtrl: _commentCtrls[candidate.id]!,
                       onChoiceChanged: poll.isOpen
@@ -191,7 +205,7 @@ class _MatchPollDetailScreenState extends ConsumerState<MatchPollDetailScreen> {
                               });
                             }
                           : null,
-                      onConfirm: poll.isOpen && widget.isAdmin
+                      onConfirm: poll.isOpen && isAdmin
                           ? () => _confirmPoll(
                                 poll: poll,
                                 candidate: candidate,

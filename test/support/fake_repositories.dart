@@ -50,8 +50,34 @@ class FakeScheduleReadRepository implements ScheduleReadRepository {
   Stream<List<ScheduleTemplate>> watchTemplates() => _templates.open();
 }
 
+/// FirebaseAuth.authStateChanges() と同様に、購読開始時に現在の状態を流す。
+class FakeAuthStream {
+  final _controller = StreamController<String?>.broadcast();
+  bool _hasValue = false;
+  String? _value;
+
+  void add(String? uid) {
+    _hasValue = true;
+    _value = uid;
+    _controller.add(uid);
+  }
+
+  void addError(Object error) => _controller.addError(error);
+
+  bool get hasListener => _controller.hasListener;
+
+  Stream<String?> get stream => Stream<String?>.multi((listener) {
+        if (_hasValue) listener.add(_value);
+        final sub = _controller.stream.listen(
+          listener.add,
+          onError: listener.addError,
+        );
+        listener.onCancel = sub.cancel;
+      });
+}
+
 class FakeCurrentUserRepository implements CurrentUserRepository {
-  final auth = StreamController<String?>.broadcast();
+  final auth = FakeAuthStream();
   final Map<String, List<StreamController<Map<String, dynamic>?>>> _docs = {};
 
   StreamController<Map<String, dynamic>?> docFor(String uid) =>

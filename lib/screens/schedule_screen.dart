@@ -12,10 +12,10 @@ import '../dialogs/schedule_edit_dialog.dart';
 import '../models/schedule_template.dart';
 import '../models/team_player.dart';
 import '../models/team_schedule.dart';
+import '../providers/player_link_request_providers.dart';
 import '../providers/player_providers.dart';
 import '../providers/schedule_providers.dart';
 import '../repositories/schedule_repository.dart';
-import '../services/firestore_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/date_time_utils.dart';
 import '../utils/schedule_utils.dart';
@@ -45,7 +45,11 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   final TeamScheduleDataSource _dataSource =
       TeamScheduleDataSource(<TeamSchedule>[]);
 
-  bool isAdmin = false;
+  // 権限の読み込み中・エラー時は管理者として扱わない(build 中のみ参照)。
+  bool get isAdmin => ref.watch(currentUserIsAdminProvider).maybeWhen(
+        data: (value) => value,
+        orElse: () => false,
+      );
 
   DateTime _visibleMonth =
       DateTime(DateTime.now().year, DateTime.now().month);
@@ -63,22 +67,25 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   @override
   void initState() {
     super.initState();
-    _init();
-  }
-
-  Future<void> _init() async {
     _listenSchedules();
     _listenPlayers();
+    _listenAdminErrors();
+  }
 
-    try {
-      final admin = await FirestoreService.isCurrentUserAdmin();
-
-      if (!mounted) return;
-      setState(() => isAdmin = admin);
-    } catch (e) {
-      debugPrint('ScheduleScreen init error: $e');
-      _showStreamError(e);
-    }
+  // 管理者判定の取得に失敗した場合は、従来通りSnackBarで通知する。
+  void _listenAdminErrors() {
+    ref.listenManual<AsyncValue<bool>>(
+      currentUserIsAdminProvider,
+      (previous, next) {
+        next.whenOrNull(
+          error: (error, _) {
+            debugPrint('ScheduleScreen init error: $error');
+            _showStreamError(error);
+          },
+        );
+      },
+      fireImmediately: true,
+    );
   }
 
   void _setSchedules(List<TeamSchedule> list) {

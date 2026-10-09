@@ -66,6 +66,16 @@ class _NotificationCenterScreenState
 
     if (confirmed != true || !mounted) return;
 
+    // ダイアログ表示中に権限が変わった場合に備え、実行直前に再確認する。
+    final isAdmin = await confirmCurrentUserIsAdmin(ref);
+    if (!mounted) return;
+    if (!isAdmin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('管理者権限を確認できないため、連携申請を処理できません')),
+      );
+      return;
+    }
+
     setState(() => processingRequestIds.add(request.id));
 
     try {

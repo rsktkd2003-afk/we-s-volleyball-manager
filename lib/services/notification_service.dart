@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_notification_status.dart';
 import '../utils/async_serial_queue.dart';
 import '../utils/firestore_collections.dart';
+import '../utils/notification_enable_flow.dart';
 import '../utils/notification_session_guard.dart';
 
 class NotificationService {
@@ -131,26 +132,15 @@ class NotificationService {
 
     await _setPreferenceEnabled(true);
 
-    try {
-      final settings = await _messaging.requestPermission();
-      if (!_isSessionCurrent(session)) return loadStatus();
-
-      if (settings.authorizationStatus == AuthorizationStatus.denied) {
-        await _setPreferenceEnabled(false);
-        return loadStatus();
-      }
-
-      await _registerCurrentToken(session);
-      if (_isSessionCurrent(session)) {
-        await _startTokenRefreshListener();
-      }
-      return loadStatus();
-    } catch (_) {
-      if (_isSessionCurrent(session)) {
-        await _setPreferenceEnabled(false);
-      }
-      rethrow;
-    }
+    return runNotificationEnableFlow(
+      requestPermission: () async =>
+          (await _messaging.requestPermission()).authorizationStatus,
+      isSessionCurrent: () => _isSessionCurrent(session),
+      setPreferenceEnabled: _setPreferenceEnabled,
+      registerCurrentToken: () => _registerCurrentToken(session),
+      startTokenRefreshListener: _startTokenRefreshListener,
+      loadStatus: loadStatus,
+    );
   }
 
   static Future<void> detachCurrentUser() async {
@@ -257,23 +247,13 @@ class NotificationService {
     }
   }
 
-  static Future<String?> _getExistingTokenSafely() async {
-    if (_registeredToken != null && _registeredToken!.isNotEmpty) {
-      return _registeredToken;
-    }
-
-    try {
-      final settings = await _messaging.getNotificationSettings();
-      final status = settings.authorizationStatus;
-      final permissionGranted =
-          status == AuthorizationStatus.authorized ||
-          status == AuthorizationStatus.provisional;
-      if (!permissionGranted) return null;
-
-      return _getTokenSafely();
-    } catch (_) {
-      return null;
-    }
+  static Future<String?> _getExistingTokenSafely() {
+    return loadExistingNotificationToken(
+      registeredToken: _registeredToken,
+      getAuthorizationStatus: () async =>
+          (await _messaging.getNotificationSettings()).authorizationStatus,
+      getTokenSafely: _getTokenSafely,
+    );
   }
 
   static Future<void> _saveToken(
