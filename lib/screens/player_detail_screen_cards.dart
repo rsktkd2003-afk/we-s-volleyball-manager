@@ -61,7 +61,7 @@ class _NumberCard extends StatelessWidget {
               ),
               color: const Color(0xFFC0392B),
               child: Text(
-                player.position.toUpperCase(),
+                _textOrUnset(player.position).toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
@@ -75,7 +75,7 @@ class _NumberCard extends StatelessWidget {
             ),
             const SizedBox(height: 22),
             Text(
-              player.name,
+              _textOrUnset(player.name),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -108,40 +108,47 @@ class _PhysicalDataCard extends StatelessWidget {
     return value.toStringAsFixed(1);
   }
 
+  /// 未入力(0以下)の身体データは「未設定」と表示する。
+  String _measurement(double value, String unit) {
+    return value > 0 ? '${_formatNumber(value)} $unit' : '未設定';
+  }
+
   @override
   Widget build(BuildContext context) {
     final values = [
       _LabelValue(
         label: '身長',
-        value: '${_formatNumber(player.height)} cm',
+        value: _measurement(player.height, 'cm'),
       ),
       _LabelValue(
         label: '体重',
-        value: '${_formatNumber(player.weight)} kg',
+        value: _measurement(player.weight, 'kg'),
       ),
       _LabelValue(
         label: '指高（立位）',
-        value: '${_formatNumber(player.standingReach)} cm',
+        value: _measurement(player.standingReach, 'cm'),
       ),
       _LabelValue(
         label: '最高到達点',
-        value: '${_formatNumber(player.maxReach)} cm',
+        value: _measurement(player.maxReach, 'cm'),
       ),
       _LabelValue(
         label: 'ブロック到達点',
-        value: '${_formatNumber(player.blockReach)} cm',
+        value: _measurement(player.blockReach, 'cm'),
       ),
       _LabelValue(
         label: 'ジャンプ高',
-        value: '${_formatNumber(player.jumpHeight)} cm',
+        value: _hasJumpInputs(player)
+            ? '${_formatNumber(player.jumpHeight)} cm'
+            : '未設定',
       ),
       _LabelValue(
         label: '利き手',
-        value: player.dominantHand,
+        value: _textOrUnset(player.dominantHand),
       ),
       _LabelValue(
         label: '学年',
-        value: player.grade,
+        value: _textOrUnset(player.grade),
       ),
     ];
 
@@ -219,14 +226,16 @@ class _PlayerInformationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final information = [
-      _LabelValue(label: '氏名', value: player.name),
+      _LabelValue(label: '氏名', value: _textOrUnset(player.name)),
       _LabelValue(label: '背番号', value: player.number.toString()),
-      _LabelValue(label: 'ポジション', value: player.position),
-      _LabelValue(label: '学年', value: player.grade),
-      _LabelValue(label: '利き手', value: player.dominantHand),
+      _LabelValue(label: 'ポジション', value: _textOrUnset(player.position)),
+      _LabelValue(label: '学年', value: _textOrUnset(player.grade)),
+      _LabelValue(label: '利き手', value: _textOrUnset(player.dominantHand)),
       _LabelValue(
         label: 'ジャンプ高',
-        value: '${player.jumpHeight.toStringAsFixed(1)} cm',
+        value: _hasJumpInputs(player)
+            ? '${player.jumpHeight.toStringAsFixed(1)} cm'
+            : '未設定',
       ),
     ];
 
@@ -245,25 +254,25 @@ class _PlayerInformationCard extends StatelessWidget {
             LayoutBuilder(
               builder: (context, constraints) {
                 final useTwoColumns = constraints.maxWidth >= 500;
+                const columnSpacing = 30.0;
+                final itemWidth = useTwoColumns
+                    ? (constraints.maxWidth - columnSpacing) / 2
+                    : constraints.maxWidth;
 
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: information.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: useTwoColumns ? 2 : 1,
-                    mainAxisExtent: 90,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 30,
-                  ),
-                  itemBuilder: (context, index) {
-                    final item = information[index];
-
-                    return _InformationField(
-                      label: item.label,
-                      value: item.value,
-                    );
-                  },
+                // 高さを固定せず内容に合わせ、長い氏名(2行)でもはみ出さない。
+                return Wrap(
+                  spacing: columnSpacing,
+                  runSpacing: 14,
+                  children: [
+                    for (final item in information)
+                      SizedBox(
+                        width: itemWidth,
+                        child: _InformationField(
+                          label: item.label,
+                          value: item.value,
+                        ),
+                      ),
+                  ],
                 );
               },
             ),
@@ -404,49 +413,52 @@ class _AbilityCard extends StatelessWidget {
               height: 1,
             ),
             const SizedBox(height: 16),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: values.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisExtent: 38,
-                crossAxisSpacing: 16,
-              ),
-              itemBuilder: (context, index) {
-                final entry = values.entries.elementAt(index);
+            LayoutBuilder(
+              // 狭い幅では1列にして、ラベルと数値が重ならないようにする。
+              builder: (context, constraints) => GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: values.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: constraints.maxWidth < 300 ? 1 : 2,
+                  mainAxisExtent: 38,
+                  crossAxisSpacing: 16,
+                ),
+                itemBuilder: (context, index) {
+                  final entry = values.entries.elementAt(index);
 
-                return Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFC0392B),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        entry.key,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                  return Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFC0392B),
+                          shape: BoxShape.circle,
                         ),
                       ),
-                    ),
-                    Text(
-                      (entry.value * 10).toString(),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          entry.key,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                      Text(
+                        (entry.value * 10).toString(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -588,23 +600,32 @@ class _PositionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  displayName,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 27,
-                    fontWeight: FontWeight.w900,
-                    fontStyle: FontStyle.italic,
+                // 狭いカード幅でも折り返さず、幅に合わせて縮小する。
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    displayName,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 27,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
-                Text(
-                  '$percentage%',
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 43,
-                    height: 1,
-                    fontWeight: FontWeight.w800,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '$percentage%',
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 43,
+                      height: 1,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 17),
@@ -720,4 +741,16 @@ class _IssueMemoCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 空文字の項目は「未設定」と表示する。
+String _textOrUnset(String value) {
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? '未設定' : trimmed;
+}
+
+/// ジャンプ高(最高到達点 - 指高)の計算に必要な値が入力済みか。
+/// 計算方法は Player.jumpHeight のまま変えず、未入力時の表示だけを切り替える。
+bool _hasJumpInputs(Player player) {
+  return player.maxReach > 0 && player.standingReach > 0;
 }

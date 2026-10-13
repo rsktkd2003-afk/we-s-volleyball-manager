@@ -26,51 +26,96 @@ class PlayerDetailScreen extends StatelessWidget {
   static const Color _accentRed = Color(0xFFC0392B);
   static const Color _boardColor = Color(0xFFE9E8E3);
 
+  /// 編集・削除の導線。押した結果(呼び出し元へ返す値)は画面幅によらず同じ。
+  /// 幅に余裕がある場合は文字ラベル付きで表示する。
+  List<Widget> _buildActions(BuildContext context, {required bool showLabels}) {
+    void edit() => Navigator.pop(context, 'edit');
+    void delete() => Navigator.pop(context, 'delete');
+
+    if (!showLabels) {
+      return [
+        IconButton(
+          tooltip: '編集',
+          icon: const Icon(Icons.edit_outlined),
+          onPressed: edit,
+        ),
+        IconButton(
+          tooltip: '削除',
+          icon: const Icon(Icons.delete_outline),
+          color: _accentRed,
+          onPressed: delete,
+        ),
+      ];
+    }
+
+    return [
+      Tooltip(
+        message: '編集',
+        child: TextButton.icon(
+          onPressed: edit,
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF252525),
+          ),
+          icon: const Icon(Icons.edit_outlined),
+          label: const Text('編集'),
+        ),
+      ),
+      const SizedBox(width: 4),
+      Tooltip(
+        message: '削除',
+        child: TextButton.icon(
+          onPressed: delete,
+          style: TextButton.styleFrom(foregroundColor: _accentRed),
+          icon: const Icon(Icons.delete_outline),
+          label: const Text('削除'),
+        ),
+      ),
+      const SizedBox(width: 8),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        backgroundColor: _boardColor,
-        appBar: AppBar(
-          title: Text(player.name),
-          backgroundColor: const Color(0xFFF7F5EF),
-          foregroundColor: const Color(0xFF252525),
-          elevation: 1,
-          actions: [
-            IconButton(
-              tooltip: '編集',
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () => Navigator.pop(context, 'edit'),
+    return LayoutBuilder(
+      builder: (context, constraints) => DefaultTabController(
+        length: 2,
+        child: Scaffold(
+          backgroundColor: _boardColor,
+          appBar: AppBar(
+            title: Text(
+              player.name.trim().isEmpty ? '名前未設定' : player.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            IconButton(
-              tooltip: '削除',
-              icon: const Icon(Icons.delete_outline),
-              color: _accentRed,
-              onPressed: () => Navigator.pop(context, 'delete'),
+            backgroundColor: const Color(0xFFF7F5EF),
+            foregroundColor: const Color(0xFF252525),
+            elevation: 1,
+            actions: _buildActions(
+              context,
+              showLabels: constraints.maxWidth >= 600,
             ),
-          ],
-          bottom: const TabBar(
-            labelColor: _accentRed,
-            unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: _accentRed,
-            tabs: [
-              Tab(
-                icon: Icon(Icons.badge_outlined),
-                text: 'スカウトカード',
-              ),
-              Tab(
-                icon: Icon(Icons.flag_outlined),
-                text: '改善点',
-              ),
+            bottom: const TabBar(
+              labelColor: _accentRed,
+              unselectedLabelColor: AppColors.textSecondary,
+              indicatorColor: _accentRed,
+              tabs: [
+                Tab(
+                  icon: Icon(Icons.badge_outlined),
+                  text: 'スカウトカード',
+                ),
+                Tab(
+                  icon: Icon(Icons.flag_outlined),
+                  text: '改善点',
+                ),
+              ],
+            ),
+          ),
+          body: TabBarView(
+            children: [
+              _ScoutingBoard(player: player),
+              PlayerIssueSection(player: player),
             ],
           ),
-        ),
-        body: TabBarView(
-          children: [
-            _ScoutingBoard(player: player),
-            PlayerIssueSection(player: player),
-          ],
         ),
       ),
     );

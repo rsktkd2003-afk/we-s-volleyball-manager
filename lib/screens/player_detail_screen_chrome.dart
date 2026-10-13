@@ -206,13 +206,19 @@ class _UnderlinedDataRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Color(0xFF242424),
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-              fontStyle: FontStyle.italic,
+          // 狭い幅でも行からはみ出さないよう、値は残り幅に収める。
+          Flexible(
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: Color(0xFF242424),
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ),
         ],

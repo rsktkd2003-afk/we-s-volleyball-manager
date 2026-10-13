@@ -40,7 +40,7 @@ class ClubBoardPlaceholder extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _BoardHeading(title: title),
+                  ClubBoardHeading(title: title),
                   const SizedBox(height: 12),
                   PinnedPaperCard(
                     margin: EdgeInsets.zero,
@@ -62,14 +62,14 @@ class ClubBoardPlaceholder extends StatelessWidget {
   }
 }
 
-class _BoardHeading extends StatelessWidget {
-  const _BoardHeading({required this.title});
+/// WE'S CLUB BOARD 共通の見出し。コルク地の上でも読めるよう紙の帯に載せる。
+class ClubBoardHeading extends StatelessWidget {
+  const ClubBoardHeading({super.key, required this.title});
 
   final String title;
 
   @override
   Widget build(BuildContext context) {
-    // コルク地の上でも読めるよう、見出しは紙の帯に載せる。
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
       decoration: BoxDecoration(

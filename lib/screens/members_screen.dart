@@ -9,6 +9,8 @@ import '../providers/player_providers.dart';
 import '../theme/app_colors.dart';
 import '../utils/firestore_collections.dart';
 import '../widgets/player_filter_bar.dart';
+import '../widgets/club_board_placeholder.dart';
+import '../widgets/cork_board_background.dart';
 import '../widgets/player_list.dart';
 import 'player_detail_screen.dart';
 import 'player_edit_screen.dart';
@@ -27,6 +29,9 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
   String selectedGrade = '全員';
   String selectedPosition = '全員';
   String sortType = '背番号';
+
+  /// スマホ幅で絞り込み条件を開いているか(タブ切り替え後も保持する)。
+  bool filtersExpanded = false;
 
   List<Player> getFilteredPlayers(List<Player> players) {
     List<Player> result = [...players];
@@ -116,46 +121,33 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
   Widget build(BuildContext context) {
     final playersAsync = ref.watch(playersProvider);
 
-    return Container(
-      color: AppColors.boardBackground,
+    return CorkBoardBackground(
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "WE'S VOLLEYBALL CLUB",
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'PLAYER SCOUTING BOARD',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(width: 56, height: 4, color: AppColors.accent),
-              const SizedBox(height: 24),
-              LayoutBuilder(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1400),
+              child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final isWide = constraints.maxWidth >= 900;
+                  final width = constraints.maxWidth;
+                  // 一覧幅に応じて絞り込みの配置を切り替える。
+                  final filterLayout = width >= 900
+                      ? PlayerFilterLayout.panel
+                      : width >= 600
+                          ? PlayerFilterLayout.inline
+                          : PlayerFilterLayout.compact;
 
                   final filterPanel = PlayerFilterBar(
                     searchQuery: searchQuery,
                     grade: selectedGrade,
                     position: selectedPosition,
                     sortType: sortType,
+                    layout: filterLayout,
+                    expanded: filtersExpanded,
+                    onExpandedChanged: (value) =>
+                        setState(() => filtersExpanded = value),
                     onSearchChanged: (value) =>
                         setState(() => searchQuery = value),
                     onGradeChanged: (value) =>
@@ -167,11 +159,24 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                   );
 
                   final grid = playersAsync.when(
-                    data: (players) => PlayerList(
-                      players: getFilteredPlayers(players),
-                      onTap: openPlayerDetail,
-                      onAddPlayer: addPlayer,
-                    ),
+                    data: (players) {
+                      final filtered = getFilteredPlayers(players);
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _ResultCountLabel(
+                            shown: filtered.length,
+                            total: players.length,
+                          ),
+                          const SizedBox(height: 20),
+                          PlayerList(
+                            players: filtered,
+                            onTap: openPlayerDetail,
+                            onAddPlayer: addPlayer,
+                          ),
+                        ],
+                      );
+                    },
                     loading: () => const _PlayersLoading(),
                     error: (error, _) {
                       debugPrint('MembersScreen players stream error: $error');
@@ -182,9 +187,16 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                     },
                   );
 
-                  if (!isWide) {
+                  const heading = ClubBoardHeading(
+                    title: 'PLAYER SCOUTING BOARD',
+                  );
+
+                  if (filterLayout != PlayerFilterLayout.panel) {
                     return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        heading,
+                        const SizedBox(height: 24),
                         filterPanel,
                         const SizedBox(height: 20),
                         grid,
@@ -192,20 +204,77 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                     );
                   }
 
-                  return Row(
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: grid),
-                      const SizedBox(width: 20),
-                      SizedBox(width: 260, child: filterPanel),
+                      heading,
+                      const SizedBox(height: 24),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: grid),
+                          const SizedBox(width: 20),
+                          SizedBox(width: 260, child: filterPanel),
+                        ],
+                      ),
                     ],
                   );
                 },
               ),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 絞り込み結果の件数を紙のラベルで表示する。
+class _ResultCountLabel extends StatelessWidget {
+  const _ResultCountLabel({required this.shown, required this.total});
+
+  final int shown;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = shown == total ? '$total名' : '$shown名を表示中 / 全$total名';
+
+    return _PaperLabel(
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: AppColors.textPrimary,
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}
+
+/// コルク地の上で文字を読みやすくするための小さな紙。
+class _PaperLabel extends StatelessWidget {
+  const _PaperLabel({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.paper,
+        borderRadius: BorderRadius.circular(4),
+        boxShadow: const [
+          BoxShadow(
+            blurRadius: 4,
+            offset: Offset(0, 2),
+            color: Color(0x26000000),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }
@@ -217,7 +286,14 @@ class _PlayersLoading extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.symmetric(vertical: 48),
-      child: Center(child: CircularProgressIndicator()),
+      child: Center(
+        child: _PaperLabel(
+          child: Padding(
+            padding: EdgeInsets.all(8),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -232,20 +308,23 @@ class _PlayersError extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 32),
-      child: Column(
-        children: [
-          Text(
-            '選手データの取得に失敗しました: $error',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 12),
-          TextButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh),
-            label: const Text('再読み込み'),
-          ),
-        ],
+      child: _PaperLabel(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '選手データの取得に失敗しました: $error',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('再読み込み'),
+            ),
+          ],
+        ),
       ),
     );
   }

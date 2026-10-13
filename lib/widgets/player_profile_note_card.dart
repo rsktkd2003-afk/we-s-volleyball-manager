@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/player.dart';
 import '../theme/app_colors.dart';
 import '../utils/player_roles.dart';
+import 'pin_badge.dart';
 
 /// 選手一覧グリッドのプレイヤーカード。
 class PlayerProfileNoteCard extends StatelessWidget {
@@ -18,7 +19,7 @@ class PlayerProfileNoteCard extends StatelessWidget {
   final int seed;
   final VoidCallback onTap;
 
-  /// true の場合、スマホ向けに背番号・名前・ポジションのみを表示する。
+  /// true の場合、スマホ向けに背番号・名前・ポジション・学年・役職のみを表示する。
   final bool isCompact;
 
   static const List<Color> _pinPalette = [
@@ -52,122 +53,115 @@ class PlayerProfileNoteCard extends StatelessWidget {
     return value == best * 10 ? AppColors.accent : const Color(0xFF1976D2);
   }
 
+  /// 空文字・'未設定' を未設定として表示する。
+  static String _textOrUnset(String value) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? '未設定' : trimmed;
+  }
+
+  /// 0 以下(未入力)の身体データは数値ではなく「—」で表示する。
+  static String _lengthOrDash(double value) {
+    return value > 0 ? '${value.toStringAsFixed(0)}cm' : '—';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned(
-              top: -14,
-              left: 22,
-              child: Transform.rotate(
-                angle: -0.35,
-                child: Icon(Icons.push_pin, size: 20, color: _pinColor),
-              ),
-            ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              decoration: BoxDecoration(
-                color: AppColors.paper,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: const [
-                  BoxShadow(
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                    color: Color(0x26000000),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '#${player.number}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.accent,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
+    final hasName = player.name.trim().isNotEmpty;
+    final grade = _textOrUnset(player.grade);
+    final position = _textOrUnset(player.position);
+
+    return Semantics(
+      button: true,
+      label: '#${player.number} ${hasName ? player.name : '名前未設定'} '
+          'の選手カード',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
+                decoration: BoxDecoration(
+                  color: AppColors.paper,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: const [
+                    BoxShadow(
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                      color: Color(0x26000000),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '#${player.number}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.accent,
+                              fontSize: 28,
+                              height: 1.1,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: AppColors.accent),
-                              ),
-                              // 狭いカード幅で折り返して縦にはみ出さないよう1行に固定する。
-                              child: const Text(
-                                'PLAYER CARD',
-                                maxLines: 1,
-                                softWrap: false,
-                                overflow: TextOverflow.fade,
-                                style: TextStyle(
-                                  color: AppColors.accent,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.6,
-                                ),
+                        const SizedBox(width: 8),
+                        if (!isCompact)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.accent),
+                            ),
+                            // 狭いカード幅で折り返して縦にはみ出さないよう1行に固定する。
+                            child: const Text(
+                              'PLAYER CARD',
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.fade,
+                              style: TextStyle(
+                                color: AppColors.accent,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.6,
                               ),
                             ),
-                            if (player.roles.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  for (final role in player.roles)
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 4),
-                                      child: Tooltip(
-                                        message: PlayerRoles.displayName(role),
-                                        child: Icon(
-                                          PlayerRoles.iconFor(role),
-                                          size: 16,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    player.name,
-                    maxLines: isCompact ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                          ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Container(
+                    const SizedBox(height: 6),
+                    Text(
+                      hasName ? player.name : '名前未設定',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 17,
+                        height: 1.3,
+                        fontWeight: FontWeight.bold,
+                        color: hasName
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 2,
@@ -177,7 +171,7 @@ class PlayerProfileNoteCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            player.position,
+                            position,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -187,62 +181,76 @@ class PlayerProfileNoteCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                      ),
-                      if (!isCompact) ...[
-                        const SizedBox(width: 8),
                         Text(
-                          player.grade,
+                          grade,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 12,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                        for (final role in player.roles)
+                          Tooltip(
+                            message: PlayerRoles.displayName(role),
+                            child: Icon(
+                              PlayerRoles.iconFor(role),
+                              size: 16,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
                       ],
+                    ),
+                    if (!isCompact) ...[
+                      const SizedBox(height: 10),
+                      const Divider(height: 1, color: Color(0xFFE0DDD6)),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _StatColumn(
+                              label: 'HEIGHT',
+                              value: _lengthOrDash(player.height),
+                            ),
+                          ),
+                          Expanded(
+                            child: _StatColumn(
+                              label: 'REACH',
+                              value: _lengthOrDash(player.maxReach),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      _AbilityBar(
+                        label: 'Attack',
+                        value: player.spike * 10,
+                        color: _barColor(player.spike * 10),
+                      ),
+                      const SizedBox(height: 4),
+                      _AbilityBar(
+                        label: 'Serve',
+                        value: player.serve * 10,
+                        color: _barColor(player.serve * 10),
+                      ),
+                      const SizedBox(height: 4),
+                      _AbilityBar(
+                        label: 'Receive',
+                        value: player.reception * 10,
+                        color: _barColor(player.reception * 10),
+                      ),
                     ],
-                  ),
-                  if (!isCompact) ...[
-                    const SizedBox(height: 10),
-                    const Divider(height: 1, color: Color(0xFFE0DDD6)),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatColumn(
-                            label: 'HEIGHT',
-                            value: '${player.height.toStringAsFixed(0)}cm',
-                          ),
-                        ),
-                        Expanded(
-                          child: _StatColumn(
-                            label: 'REACH',
-                            value: '${player.maxReach.toStringAsFixed(0)}cm',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    _AbilityBar(
-                      label: 'Attack',
-                      value: player.spike * 10,
-                      color: _barColor(player.spike * 10),
-                    ),
-                    const SizedBox(height: 4),
-                    _AbilityBar(
-                      label: 'Serve',
-                      value: player.serve * 10,
-                      color: _barColor(player.serve * 10),
-                    ),
-                    const SizedBox(height: 4),
-                    _AbilityBar(
-                      label: 'Receive',
-                      value: player.reception * 10,
-                      color: _barColor(player.reception * 10),
-                    ),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+              Positioned(
+                top: -8,
+                left: 20,
+                child: PinBadge(color: _pinColor, size: 16),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -272,6 +280,8 @@ class _StatColumn extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 14,
@@ -302,6 +312,8 @@ class _AbilityBar extends StatelessWidget {
           width: 46,
           child: Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 11,
