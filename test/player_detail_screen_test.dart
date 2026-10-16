@@ -77,16 +77,23 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  for (final width in const [360.0, 400.0, 599.0, 600.0, 900.0, 1200.0, 1440.0]) {
-    testWidgets('${width.toInt()}px幅で崩れずに表示し、編集・削除へアクセスできる',
-        (tester) async {
+  for (final width in const [
+    360.0,
+    400.0,
+    599.0,
+    600.0,
+    900.0,
+    1200.0,
+    1440.0,
+  ]) {
+    testWidgets('${width.toInt()}px幅で崩れずに表示し、編集・削除へアクセスできる', (tester) async {
       await pumpDetail(tester, _fullPlayer(), size: Size(width, 900));
 
       expect(find.byType(AbilityRadarChart), findsOneWidget);
       expect(find.byTooltip('編集'), findsOneWidget);
-      expect(find.byTooltip('削除'), findsOneWidget);
-      // 600px以上は文字ラベル付き。
-      expect(find.text('編集'), width >= 600 ? findsOneWidget : findsNothing);
+      expect(find.byTooltip('その他の操作'), findsOneWidget);
+      expect(find.byTooltip('削除'), findsNothing);
+      expect(find.text('選手を削除'), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }
@@ -119,7 +126,11 @@ void main() {
   });
 
   testWidgets('基本情報・身体情報・能力値を表示する', (tester) async {
-    await pumpDetail(tester, _fullPlayer(name: '山田 太郎'), size: const Size(1440, 1400));
+    await pumpDetail(
+      tester,
+      _fullPlayer(name: '山田 太郎'),
+      size: const Size(1440, 1400),
+    );
 
     for (final text in [
       '山田 太郎',
@@ -177,7 +188,9 @@ void main() {
         (tester) async {
       await pumpDetail(tester, _fullPlayer(), size: Size(width, 900));
 
-      await tester.tap(find.byTooltip('削除'));
+      await tester.tap(find.byTooltip('その他の操作'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('選手を削除'));
       await tester.pumpAndSettle();
 
       expect(find.text('選手を削除しますか？'), findsOneWidget);

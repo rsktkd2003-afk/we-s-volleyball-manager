@@ -16,74 +16,77 @@ class BulletinStickyArea extends ConsumerWidget {
     super.key,
     required this.visibleMonth,
     this.isAdmin = false,
+    this.showAnnouncements = true,
+    this.showGoals = true,
   });
 
   final DateTime visibleMonth;
   final bool isAdmin;
+  final bool showAnnouncements;
+  final bool showGoals;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final announcementsAsync = ref.watch(announcementsProvider);
-    final goalsAsync = ref.watch(goalsForMonthProvider(visibleMonth));
+    final announcementsAsync = showAnnouncements
+        ? ref.watch(announcementsProvider)
+        : const AsyncData<List<Announcement>>([]);
+    final goalsAsync = showGoals
+        ? ref.watch(goalsForMonthProvider(visibleMonth))
+        : const AsyncData<List<TeamGoal>>([]);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionHeader(
-            title: 'チームからのお知らせ',
-            onAdd: () => _showAnnouncementEditor(
-              context: context,
-              ref: ref,
-              item: null,
-            ),
-          ),
-          const SizedBox(height: 8),
-          announcementsAsync.when(
-            data: (items) => _AnnouncementWrap(
-              items: items,
-              onTap: (item) => _handleAnnouncementTap(
-                context: context,
-                ref: ref,
-                item: item,
-              ),
+          if (showAnnouncements) ...[
+            _SectionHeader(
+              title: 'チームからのお知らせ',
               onAdd: () => _showAnnouncementEditor(
                 context: context,
                 ref: ref,
                 item: null,
               ),
             ),
-            loading: () => const _LoadingMemo(),
-            error: (error, _) => _ErrorMemo(message: error.toString()),
-          ),
-          const SizedBox(height: 18),
-          _SectionHeader(
-            title: '今月の目標',
-            onAdd: () => _showGoalEditor(
-              context: context,
-              ref: ref,
-              item: null,
-            ),
-          ),
-          const SizedBox(height: 8),
-          goalsAsync.when(
-            data: (items) => _GoalWrap(
-              items: items,
-              onTap: (item) => _handleGoalTap(
-                context: context,
-                ref: ref,
-                item: item,
+            const SizedBox(height: 8),
+            announcementsAsync.when(
+              data: (items) => _AnnouncementWrap(
+                items: items,
+                onTap: (item) => _handleAnnouncementTap(
+                  context: context,
+                  ref: ref,
+                  item: item,
+                ),
+                onAdd: () => _showAnnouncementEditor(
+                  context: context,
+                  ref: ref,
+                  item: null,
+                ),
               ),
-              onAdd: () => _showGoalEditor(
-                context: context,
-                ref: ref,
-                item: null,
-              ),
+              loading: () => const _LoadingMemo(),
+              error: (error, _) => _ErrorMemo(message: error.toString()),
             ),
-            loading: () => const _LoadingMemo(),
-            error: (error, _) => _ErrorMemo(message: error.toString()),
-          ),
+          ],
+          if (showGoals) ...[
+            const SizedBox(height: 12),
+            _SectionHeader(
+              title: '今月の目標',
+              onAdd: () =>
+                  _showGoalEditor(context: context, ref: ref, item: null),
+            ),
+            const SizedBox(height: 8),
+            goalsAsync.when(
+              data: (items) => _GoalWrap(
+                items: items,
+                onTap: (item) =>
+                    _handleGoalTap(context: context, ref: ref, item: item),
+                onAdd: () =>
+                    _showGoalEditor(context: context, ref: ref, item: null),
+              ),
+              loading: () => const _LoadingMemo(),
+              error: (error, _) => _ErrorMemo(message: error.toString()),
+            ),
+          ],
         ],
       ),
     );
@@ -95,11 +98,7 @@ class BulletinStickyArea extends ConsumerWidget {
     required Announcement item,
   }) {
     if (_canEdit(item.createdBy)) {
-      _showAnnouncementEditor(
-        context: context,
-        ref: ref,
-        item: item,
-      );
+      _showAnnouncementEditor(context: context, ref: ref, item: item);
       return;
     }
 
@@ -117,11 +116,7 @@ class BulletinStickyArea extends ConsumerWidget {
     required TeamGoal item,
   }) {
     if (_canEdit(item.createdBy)) {
-      _showGoalEditor(
-        context: context,
-        ref: ref,
-        item: item,
-      );
+      _showGoalEditor(context: context, ref: ref, item: item);
       return;
     }
 
@@ -155,10 +150,7 @@ class BulletinStickyArea extends ConsumerWidget {
       initialBody: item?.body,
       onSubmit: (title, body) async {
         if (item == null) {
-          await repository.addAnnouncement(
-            title: title,
-            body: body,
-          );
+          await repository.addAnnouncement(title: title, body: body);
         } else {
           await repository.updateAnnouncement(
             id: item.id,

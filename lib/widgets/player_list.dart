@@ -22,7 +22,7 @@ class PlayerList extends StatelessWidget {
   /// 詳細表示カードの目安の幅。一覧幅からこの幅を基準に列数を決める。
   static const double _targetCardWidth = 240;
 
-  static const double _spacing = 14;
+  static const double _spacing = 12;
 
   /// カード上端のピンが前の行のカードに重ならないよう、行間を広めに取る。
   static const double _runSpacing = 24;
@@ -38,7 +38,7 @@ class PlayerList extends StatelessWidget {
         // 列数を決める。カードの高さは内容に合わせるため、長い名前や
         // 文字サイズの拡大でもカードからはみ出さない。
         final columns = isCompact
-            ? (width >= 300 ? 2 : 1)
+            ? (1)
             : ((width + _spacing) / (_targetCardWidth + _spacing))
                 .floor()
                 .clamp(2, 5);

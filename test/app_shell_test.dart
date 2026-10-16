@@ -87,27 +87,31 @@ void main() {
     );
   }
 
-  testWidgets('初期タブはホームで、4タブを表示する', (tester) async {
+  testWidgets('初期タブは予定で、2タブを表示する', (tester) async {
     await pumpShell(tester, _phone);
 
-    for (final label in ['ホーム', '予定', '練習', 'メンバー']) {
+    for (final label in ['予定', 'メンバー']) {
       expect(navLabel(label), findsOneWidget);
     }
-    expect(find.text("WE'S CLUB BOARD"), findsOneWidget);
-    expect(find.text('ダッシュボードを準備中です'), findsOneWidget);
+    expect(navLabel('ホーム'), findsNothing);
+    expect(navLabel('練習'), findsNothing);
+    expect(find.text('チームの予定'), findsOneWidget);
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-      AppShellTab.home.index,
+      AppShellTab.schedule.index,
     );
   });
 
   testWidgets('未表示のタブは生成せず、Firestoreの購読も始めない', (tester) async {
     await pumpShell(tester, _phone);
 
-    expect(playerRepository.controllers, isEmpty);
-    expect(scheduleRepository.scheduleSubscriptionCount, 0);
-    expect(find.text('PLAYER SCOUTING BOARD', skipOffstage: false), findsNothing);
-    expect(find.text('TEAM SCHEDULE BOARD', skipOffstage: false), findsNothing);
+    expect(playerRepository.controllers, hasLength(1));
+    expect(scheduleRepository.scheduleSubscriptionCount, 1);
+    expect(
+      find.text('PLAYER SCOUTING BOARD', skipOffstage: false),
+      findsNothing,
+    );
+    expect(find.text('チームの予定', skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('スマホ幅(600px未満)ではBottom Navigationを表示する', (tester) async {
@@ -150,7 +154,7 @@ void main() {
     );
   });
 
-  testWidgets('タブを切り替えて予定・練習・メンバーへアクセスできる', (tester) async {
+  testWidgets('タブを切り替えて予定とメンバーへアクセスできる', (tester) async {
     await pumpShell(tester, _phone);
 
     await openTab(tester, '予定');
@@ -159,23 +163,17 @@ void main() {
     playerRepository.last.add([]);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('TEAM SCHEDULE BOARD'), findsOneWidget);
+    expect(find.text('チームの予定'), findsOneWidget);
     expect(find.text('全体練習'), findsWidgets);
 
-    await openTab(tester, '練習');
-    expect(find.text('PRACTICE IDEAS'), findsOneWidget);
-    expect(find.text('練習案ボードを準備中です'), findsOneWidget);
-
     await openTab(tester, 'メンバー');
-    playerRepository.last.add([
-      testPlayer(id: 'p1', name: '山田', number: 3),
-    ]);
+    playerRepository.last.add([testPlayer(id: 'p1', name: '山田', number: 3)]);
     await tester.pumpAndSettle();
     expect(find.text('PLAYER SCOUTING BOARD'), findsOneWidget);
     expect(find.text('山田'), findsOneWidget);
 
-    await openTab(tester, 'ホーム');
-    expect(find.text('ダッシュボードを準備中です'), findsOneWidget);
+    await openTab(tester, '予定');
+    expect(find.text('チームの予定'), findsOneWidget);
   });
 
   testWidgets('NavigationRailからもタブを切り替えられる', (tester) async {
@@ -210,7 +208,7 @@ void main() {
     scheduleRepository.schedules.add([]);
     scheduleRepository.templates.add([]);
     await tester.pump();
-    await openTab(tester, 'ホーム');
+    await openTab(tester, '予定');
     await openTab(tester, 'メンバー');
     await tester.pumpAndSettle();
 
@@ -225,8 +223,7 @@ void main() {
     expect(scheduleRepository.scheduleSubscriptionCount, 1);
   });
 
-  testWidgets('画面幅が変わってナビゲーションが切り替わっても画面状態を維持する',
-      (tester) async {
+  testWidgets('画面幅が変わってナビゲーションが切り替わっても画面状態を維持する', (tester) async {
     await pumpShell(tester, _phone);
 
     await openTab(tester, 'メンバー');
@@ -248,8 +245,7 @@ void main() {
     expect(playerRepository.controllers, hasLength(1));
   });
 
-  testWidgets('小型スマホ幅(360px)で全タブを表示してもレイアウトが崩れない',
-      (tester) async {
+  testWidgets('小型スマホ幅(360px)で全タブを表示してもレイアウトが崩れない', (tester) async {
     await pumpShell(tester, const Size(360, 740));
 
     await openTab(tester, '予定');
@@ -261,17 +257,15 @@ void main() {
     ]);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('TEAM SCHEDULE BOARD'), findsOneWidget);
-
-    await openTab(tester, '練習');
-    expect(find.text('PRACTICE IDEAS'), findsOneWidget);
+    expect(find.text('チームの予定'), findsOneWidget);
 
     await openTab(tester, 'メンバー');
     await tester.pumpAndSettle();
     expect(find.text('佐藤'), findsOneWidget);
 
-    await openTab(tester, 'ホーム');
-    expect(find.text("WE'S CLUB BOARD"), findsOneWidget);
+    await openTab(tester, '予定');
+    expect(navLabel('ホーム'), findsNothing);
+    expect(navLabel('練習'), findsNothing);
     // RenderFlex のはみ出し等が発生した場合はここで検出される。
     expect(tester.takeException(), isNull);
   });

@@ -11,6 +11,7 @@ import 'screens/player_link_screen.dart';
 import 'services/account_service.dart';
 import 'services/firestore_service.dart';
 import 'services/notification_service.dart';
+import 'theme/app_colors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,11 +24,7 @@ Future<void> main() async {
     }
   });
 
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -39,7 +36,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: "We's Volleyball Manager",
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.action),
         useMaterial3: true,
       ),
       home: StreamBuilder<User?>(
@@ -120,8 +117,7 @@ class _AuthenticatedHomeState extends State<_AuthenticatedHome> {
             final role = userData['role'] as String? ?? 'member';
             final playerId = userData['playerId'] as String?;
 
-            if (role == 'member' &&
-                (playerId == null || playerId.isEmpty)) {
+            if (role == 'member' && (playerId == null || playerId.isEmpty)) {
               return const PlayerLinkScreen();
             }
 
@@ -138,9 +134,7 @@ class _LoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 

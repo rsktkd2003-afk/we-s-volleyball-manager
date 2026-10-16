@@ -264,8 +264,9 @@ void main() {
           overrides: [
             currentUserRepositoryProvider.overrideWithValue(userRepository),
             playerRepositoryProvider.overrideWithValue(repository),
-            scheduleReadRepositoryProvider
-                .overrideWithValue(scheduleRepository),
+            scheduleReadRepositoryProvider.overrideWithValue(
+              scheduleRepository,
+            ),
             announcementsProvider.overrideWith(
               (ref) => Stream.value(const <Announcement>[]),
             ),
@@ -294,11 +295,12 @@ void main() {
       );
       await tester.pump();
       repository.last.add([
-        _player(id: 'long', name: _longName, number: 99, roles: const [
-          'captain',
-          'viceCaptain',
-          'sns',
-        ]),
+        _player(
+          id: 'long',
+          name: _longName,
+          number: 99,
+          roles: const ['captain', 'viceCaptain', 'sns'],
+        ),
         _unsetPlayer(),
         ..._roster(),
       ]);
@@ -343,7 +345,7 @@ void main() {
       await selectDropdown(tester, 0, '2年');
       expect(find.text('山田'), findsOneWidget);
 
-      for (final label in ['予定', 'ホーム', 'メンバー']) {
+      for (final label in ['予定', 'メンバー']) {
         await tester.tap(
           find.descendant(
             of: find.byType(NavigationBar),

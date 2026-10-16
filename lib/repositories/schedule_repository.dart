@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/schedule_template.dart';
+import '../models/schedule_response.dart';
 import '../models/team_schedule.dart';
 import '../utils/firestore_collections.dart';
 
@@ -12,45 +13,76 @@ abstract interface class ScheduleReadRepository {
   Stream<List<ScheduleTemplate>> watchTemplates();
 }
 
-/// 既存の [ScheduleRepository] に委譲する Firestore 実装。
-class FirebaseScheduleReadRepository implements ScheduleReadRepository {
-  const FirebaseScheduleReadRepository();
-
-  @override
-  Stream<List<TeamSchedule>> watchSchedules() =>
-      ScheduleRepository.watchSchedules();
-
-  @override
-  Stream<List<ScheduleTemplate>> watchTemplates() =>
-      ScheduleRepository.watchTemplates();
+/// 予定・テンプレート・出欠の操作。読み取りの差し替え口は別途維持する。
+abstract interface class ScheduleRepository implements ScheduleReadRepository {
+  String? get currentUid;
+  Future<bool> isCurrentUserAdmin();
+  Future<List<TeamSchedule>> fetchSchedules();
+  Future<void> addSchedule(TeamSchedule schedule);
+  Future<void> updateSchedule({
+    required String id,
+    required String title,
+    required String location,
+    required DateTime start,
+    required int durationMinutes,
+  });
+  Future<void> deleteSchedule(String id);
+  Future<void> addTemplate(ScheduleTemplate template);
+  Future<void> deleteTemplate(String id);
+  Stream<List<ScheduleResponse>> watchResponses(String scheduleId);
+  Future<void> saveResponse({
+    required String scheduleId,
+    required String status,
+    required String lateTime,
+  });
+  Future<void> deleteMyResponse(String scheduleId);
 }
 
 /// schedules / schedule_templates / 出欠(responses) への
 /// Firestore アクセスを一元化する。
-class ScheduleRepository {
-  static final _db = FirebaseFirestore.instance;
+class FirebaseScheduleRepository implements ScheduleRepository {
+  FirebaseScheduleRepository({FirebaseFirestore? firestore, this.auth})
+    : _db = firestore ?? FirebaseFirestore.instance;
 
-  static CollectionReference<Map<String, dynamic>> get _schedules =>
+  final FirebaseFirestore _db;
+  final FirebaseAuth? auth;
+
+  FirebaseAuth get _auth => auth ?? FirebaseAuth.instance;
+
+  @override
+  String? get currentUid => _auth.currentUser?.uid;
+
+  /// 削除操作の直前に、従来と同じ単発取得でroleを確認する。
+  @override
+  Future<bool> isCurrentUserAdmin() async {
+    final uid = currentUid;
+    if (uid == null) return false;
+    final doc = await _db.collection(FirestoreCollections.users).doc(uid).get();
+    return doc.data()?['role'] == 'admin';
+  }
+
+  CollectionReference<Map<String, dynamic>> get _schedules =>
       _db.collection(FirestoreCollections.schedules);
 
-  static CollectionReference<Map<String, dynamic>> get _templates =>
+  CollectionReference<Map<String, dynamic>> get _templates =>
       _db.collection(FirestoreCollections.scheduleTemplates);
 
-  static CollectionReference<Map<String, dynamic>> _responses(
-    String scheduleId,
-  ) => _schedules.doc(scheduleId).collection(FirestoreCollections.responses);
+  CollectionReference<Map<String, dynamic>> _responses(String scheduleId) =>
+      _schedules.doc(scheduleId).collection(FirestoreCollections.responses);
 
   // ---------- schedules ----------
 
-  static Stream<List<TeamSchedule>> watchSchedules() {
+  @override
+  Stream<List<TeamSchedule>> watchSchedules() {
     return _schedules.orderBy('start').snapshots().map(_toSchedules);
   }
 
-  static Future<List<TeamSchedule>> fetchSchedules() async {
+  @override
+  Future<List<TeamSchedule>> fetchSchedules() async {
     return _toSchedules(await _schedules.orderBy('start').get());
   }
 
-  static List<TeamSchedule> _toSchedules(
+  List<TeamSchedule> _toSchedules(
     QuerySnapshot<Map<String, dynamic>> snapshot,
   ) {
     return snapshot.docs
@@ -58,21 +90,37 @@ class ScheduleRepository {
         .toList();
   }
 
-  static Future<void> addSchedule(TeamSchedule schedule) {
-    return _schedules.add(schedule.toJson());
+  @override
+  Future<void> addSchedule(TeamSchedule schedule) async {
+    await _schedules.add(schedule.toJson());
   }
 
-  static Future<void> updateSchedule(String id, Map<String, dynamic> data) {
-    return _schedules.doc(id).update(data);
+  @override
+  Future<void> updateSchedule({
+    required String id,
+    required String title,
+    required String location,
+    required DateTime start,
+    required int durationMinutes,
+  }) {
+    return _schedules.doc(id).update({
+      'title': title,
+      'location': location,
+      'start': Timestamp.fromDate(start),
+      'end': Timestamp.fromDate(start.add(Duration(minutes: durationMinutes))),
+      'durationMinutes': durationMinutes,
+    });
   }
 
-  static Future<void> deleteSchedule(String id) {
+  @override
+  Future<void> deleteSchedule(String id) {
     return _schedules.doc(id).delete();
   }
 
   // ---------- schedule_templates ----------
 
-  static Stream<List<ScheduleTemplate>> watchTemplates() {
+  @override
+  Stream<List<ScheduleTemplate>> watchTemplates() {
     return _templates.snapshots().map(
       (snapshot) => snapshot.docs
           .map((doc) => ScheduleTemplate.fromJson(doc.data(), doc.id))
@@ -80,28 +128,34 @@ class ScheduleRepository {
     );
   }
 
-  static Future<void> addTemplate(ScheduleTemplate template) {
-    return _templates.add(template.toJson());
+  @override
+  Future<void> addTemplate(ScheduleTemplate template) async {
+    await _templates.add(template.toJson());
   }
 
-  static Future<void> deleteTemplate(String id) {
+  @override
+  Future<void> deleteTemplate(String id) {
     return _templates.doc(id).delete();
   }
 
   // ---------- 出欠 (responses) ----------
 
-  static Stream<QuerySnapshot<Map<String, dynamic>>> watchResponses(
-    String scheduleId,
-  ) {
-    return _responses(scheduleId).snapshots();
+  @override
+  Stream<List<ScheduleResponse>> watchResponses(String scheduleId) {
+    return _responses(scheduleId).snapshots().map(
+      (snapshot) => snapshot.docs
+          .map((doc) => ScheduleResponse.fromJson(doc.data()))
+          .toList(),
+    );
   }
 
-  static Future<void> saveResponse({
+  @override
+  Future<void> saveResponse({
     required String scheduleId,
     required String status,
     required String lateTime,
   }) async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     if (user == null) return;
 
     final userDoc = await _db
@@ -131,8 +185,9 @@ class ScheduleRepository {
     });
   }
 
-  static Future<void> deleteMyResponse(String scheduleId) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+  @override
+  Future<void> deleteMyResponse(String scheduleId) async {
+    final uid = currentUid;
     if (uid == null) return;
 
     await _responses(scheduleId).doc(uid).delete();

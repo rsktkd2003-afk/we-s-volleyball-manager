@@ -1,0 +1,55 @@
+import '../models/player.dart';
+
+/// 編集画面の文字入力を既存の規則で変換する。検証や保存は行わない。
+Player playerFromEditInput({
+  required Player original,
+  required String name,
+  required String number,
+  required String position,
+  required String dominantHand,
+  required String grade,
+  required String height,
+  required String weight,
+  required String standingReach,
+  required String maxReach,
+  required String blockReach,
+  required String spike,
+  required String serve,
+  required String reception,
+  required String dig,
+  required String toss,
+  required String block,
+  required String mobility,
+  required List<String> roles,
+}) {
+  return Player(
+    id: original.id,
+    ownerUid: original.ownerUid,
+    linkedUid: original.linkedUid,
+    name: name.trim(),
+    number: int.tryParse(number) ?? 0,
+    position: position.trim(),
+    dominantHand: dominantHand.trim(),
+    grade: grade.trim(),
+    height: double.tryParse(height) ?? 0.0,
+    weight: double.tryParse(weight) ?? 0.0,
+    standingReach: double.tryParse(standingReach) ?? 0.0,
+    maxReach: double.tryParse(maxReach) ?? 0.0,
+    blockReach: double.tryParse(blockReach) ?? 0.0,
+    spike: _ability(spike),
+    serve: _ability(serve),
+    reception: _ability(reception),
+    dig: _ability(dig),
+    toss: _ability(toss),
+    block: _ability(block),
+    mobility: _ability(mobility),
+    jump: original.jump,
+    power: original.power,
+    speed: original.speed,
+    stamina: original.stamina,
+    gameSense: original.gameSense,
+    roles: roles,
+  );
+}
+
+int _ability(String value) => (int.tryParse(value) ?? 5).clamp(1, 10);

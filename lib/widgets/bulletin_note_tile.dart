@@ -49,7 +49,7 @@ class BulletinNoteTile extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(14, 18, 14, 14),
               decoration: BoxDecoration(
                 color: color,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(12),
                 boxShadow: const [
                   BoxShadow(
                     blurRadius: 10,
@@ -150,10 +150,14 @@ class BulletinNoteTile extends StatelessWidget {
 
     if (onTap == null) return paper;
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: paper,
+    return Semantics(
+      button: true,
+      label: heading,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: paper,
+      ),
     );
   }
 }

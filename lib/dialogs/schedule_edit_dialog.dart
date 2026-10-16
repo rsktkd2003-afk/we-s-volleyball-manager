@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/team_schedule.dart';
@@ -7,8 +6,9 @@ import '../theme/app_colors.dart';
 
 Future<void> showEditScheduleDialog(
   BuildContext context,
-  TeamSchedule schedule,
-) async {
+  TeamSchedule schedule, {
+  required ScheduleRepository repository,
+}) async {
   final titleController = TextEditingController(text: schedule.title);
   final locationController = TextEditingController(text: schedule.location);
 
@@ -98,11 +98,11 @@ Future<void> showEditScheduleDialog(
     startTime.minute,
   );
 
-  await ScheduleRepository.updateSchedule(schedule.id!, {
-    'title': titleController.text,
-    'location': locationController.text,
-    'start': Timestamp.fromDate(start),
-    'end': Timestamp.fromDate(start.add(Duration(minutes: durationMinutes))),
-    'durationMinutes': durationMinutes,
-  });
+  await repository.updateSchedule(
+    id: schedule.id!,
+    title: titleController.text,
+    location: locationController.text,
+    start: start,
+    durationMinutes: durationMinutes,
+  );
 }

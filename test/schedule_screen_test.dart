@@ -89,7 +89,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('TEAM SCHEDULE BOARD'), findsOneWidget);
+    expect(find.text('チームの予定'), findsOneWidget);
     expect(find.text('全体練習'), findsWidgets);
   });
 
@@ -115,10 +115,7 @@ void main() {
 
     scheduleRepository.schedules.addError(StateError('schedules-unavailable'));
 
-    expect(
-      await waitForSnackBarText(tester, 'schedules-unavailable'),
-      isTrue,
-    );
+    expect(await waitForSnackBarText(tester, 'schedules-unavailable'), isTrue);
   });
 
   testWidgets('管理者判定の取得エラーを従来通りSnackBarで通知する', (tester) async {

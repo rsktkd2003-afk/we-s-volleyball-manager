@@ -17,16 +17,17 @@ class WesAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onTapProfile;
 
   @override
-  Size get preferredSize => const Size.fromHeight(64);
+  Size get preferredSize => const Size.fromHeight(58);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: false,
-      toolbarHeight: 64,
+      toolbarHeight: 58,
       elevation: 0,
-      backgroundColor: AppColors.headerDark,
+      backgroundColor: AppColors.paper,
       surfaceTintColor: Colors.transparent,
+      shape: const Border(bottom: BorderSide(color: Color(0xFFE7E2D9))),
       titleSpacing: 16,
       title: Row(
         children: [
@@ -34,28 +35,13 @@ class WesAppBar extends StatelessWidget implements PreferredSizeWidget {
             width: 36,
             height: 36,
             decoration: const BoxDecoration(
-              color: AppColors.accent,
+              color: AppColors.action,
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.sports_volleyball,
-              color: Colors.white,
+              color: AppColors.paper,
               size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text(
-              "We's Volleyball Manager",
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
             ),
           ),
         ],
@@ -108,12 +94,12 @@ class _HeaderIconButton extends StatelessWidget {
           height: 38,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white24),
+            border: Border.all(color: const Color(0xFFD9D3C9)),
           ),
           child: IconButton(
             padding: EdgeInsets.zero,
             onPressed: onTap,
-            icon: Icon(icon, color: Colors.white, size: 20),
+            icon: Icon(icon, color: AppColors.action, size: 20),
             tooltip: tooltip,
           ),
         ),

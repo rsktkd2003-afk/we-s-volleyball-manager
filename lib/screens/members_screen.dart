@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,7 +5,6 @@ import '../dialogs/add_player_dialog.dart';
 import '../models/player.dart';
 import '../providers/player_providers.dart';
 import '../theme/app_colors.dart';
-import '../utils/firestore_collections.dart';
 import '../widgets/player_filter_bar.dart';
 import '../widgets/club_board_placeholder.dart';
 import '../widgets/cork_board_background.dart';
@@ -68,25 +65,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
 
     if (name == null || name.trim().isEmpty) return;
 
-    final newPlayer = Player(
-      name: name.trim(),
-      number: 0,
-      position: '未設定',
-      dominantHand: '右',
-      grade: '未設定',
-      height: 0.0,
-      weight: 0.0,
-      standingReach: 0.0,
-      maxReach: 0.0,
-      blockReach: 0.0,
-    );
-
-    await FirebaseFirestore.instance
-        .collection(FirestoreCollections.players)
-        .add({
-      ...newPlayer.toJson(),
-      'ownerUid': FirebaseAuth.instance.currentUser?.uid,
-    });
+    await ref.read(playerRepositoryProvider).addPlayer(name.trim());
   }
 
   /// 選手詳細を開く。編集・削除(確認・エラー処理を含む)は詳細画面で行い、
@@ -159,7 +138,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                             shown: filtered.length,
                             total: players.length,
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 12),
                           PlayerList(
                             players: filtered,
                             onTap: openPlayerDetail,
@@ -187,9 +166,9 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         heading,
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 12),
                         filterPanel,
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 12),
                         grid,
                       ],
                     );
@@ -199,7 +178,7 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       heading,
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 12),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

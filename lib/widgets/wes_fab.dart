@@ -24,12 +24,12 @@ class WesFab extends StatelessWidget {
           BoxShadow(
             blurRadius: 14,
             offset: Offset(0, 6),
-            color: Color(0x4DB71C1C),
+            color: Color(0x33246FA8),
           ),
         ],
         gradient: RadialGradient(
           center: Alignment(-0.3, -0.4),
-          colors: [Color(0xFFEF5350), AppColors.accent],
+          colors: [Color(0xFF3684BA), AppColors.action],
           stops: [0.0, 1.0],
         ),
       ),

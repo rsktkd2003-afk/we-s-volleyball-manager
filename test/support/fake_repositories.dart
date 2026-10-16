@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:volleyball_app/models/player.dart';
 import 'package:volleyball_app/models/schedule_template.dart';
+import 'package:volleyball_app/models/schedule_response.dart';
 import 'package:volleyball_app/models/team_schedule.dart';
 import 'package:volleyball_app/repositories/current_user_repository.dart';
 import 'package:volleyball_app/repositories/player_repository.dart';
@@ -26,6 +27,13 @@ class _Streams<T> {
 /// ストリームへ反映し(レイテンシ補償)、サーバーが拒否した場合は元に戻す。
 class FakePlayerRepository implements PlayerRepository {
   final _streams = _Streams<List<Player>>();
+
+  final List<String> addedNames = [];
+
+  @override
+  Future<void> addPlayer(String name) async {
+    addedNames.add(name);
+  }
 
   /// 購読中のストリームへ最後に流れた一覧。
   List<Player>? _latest;
@@ -72,10 +80,10 @@ class FakePlayerRepository implements PlayerRepository {
       _emitLocal([
         for (final current in before)
           current.id == player.id
-              ? Player.fromJson(
-                  {...current.toJson(), ...fields},
-                  id: current.id,
-                )
+              ? Player.fromJson({
+                  ...current.toJson(),
+                  ...fields,
+                }, id: current.id)
               : current,
       ]);
     }
@@ -126,6 +134,104 @@ class FakeScheduleReadRepository implements ScheduleReadRepository {
 
   @override
   Stream<List<ScheduleTemplate>> watchTemplates() => _templates.open();
+}
+
+class FakeScheduleRepository extends FakeScheduleReadRepository
+    implements ScheduleRepository {
+  @override
+  String? currentUid = 'user-1';
+  bool isAdmin = false;
+  Object? adminError;
+  List<TeamSchedule> fetchedSchedules = [];
+  final addedSchedules = <TeamSchedule>[];
+  final updatedSchedules = <Map<String, Object>>[];
+  final deletedScheduleIds = <String>[];
+  final addedTemplates = <ScheduleTemplate>[];
+  final deletedTemplateIds = <String>[];
+  final savedResponses =
+      <({String scheduleId, String status, String lateTime})>[];
+  final deletedResponses = <String>[];
+  final responseStreams = <String, StreamController<List<ScheduleResponse>>>{};
+
+  @override
+  Future<bool> isCurrentUserAdmin() async {
+    if (adminError != null) throw adminError!;
+    return isAdmin;
+  }
+
+  @override
+  Future<List<TeamSchedule>> fetchSchedules() async => fetchedSchedules;
+
+  @override
+  Future<void> addSchedule(TeamSchedule schedule) async {
+    addedSchedules.add(schedule);
+  }
+
+  @override
+  Future<void> updateSchedule({
+    required String id,
+    required String title,
+    required String location,
+    required DateTime start,
+    required int durationMinutes,
+  }) async {
+    updatedSchedules.add({
+      'id': id,
+      'title': title,
+      'location': location,
+      'start': start,
+      'durationMinutes': durationMinutes,
+    });
+  }
+
+  @override
+  Future<void> deleteSchedule(String id) async {
+    deletedScheduleIds.add(id);
+  }
+
+  @override
+  Future<void> addTemplate(ScheduleTemplate template) async {
+    addedTemplates.add(template);
+  }
+
+  @override
+  Future<void> deleteTemplate(String id) async {
+    deletedTemplateIds.add(id);
+  }
+
+  @override
+  Stream<List<ScheduleResponse>> watchResponses(String scheduleId) {
+    return responseStreams
+        .putIfAbsent(
+          scheduleId,
+          () => StreamController<List<ScheduleResponse>>.broadcast(),
+        )
+        .stream;
+  }
+
+  @override
+  Future<void> saveResponse({
+    required String scheduleId,
+    required String status,
+    required String lateTime,
+  }) async {
+    savedResponses.add((
+      scheduleId: scheduleId,
+      status: status,
+      lateTime: lateTime,
+    ));
+  }
+
+  @override
+  Future<void> deleteMyResponse(String scheduleId) async {
+    deletedResponses.add(scheduleId);
+  }
+
+  Future<void> closeResponses() async {
+    for (final controller in responseStreams.values) {
+      await controller.close();
+    }
+  }
 }
 
 /// FirebaseAuth.authStateChanges() と同様に、購読開始時に現在の状態を流す。

@@ -32,7 +32,7 @@ class PinnedPaperCard extends StatelessWidget {
             width: double.infinity,
             padding: padding,
             decoration: BoxDecoration(
-              color: const Color(0xFFFCFAF4),
+              color: AppColors.paper,
               borderRadius: BorderRadius.circular(12),
               boxShadow: const [
                 BoxShadow(
@@ -45,10 +45,7 @@ class PinnedPaperCard extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             // 紙の背景色の上に透明なMaterialを敷き、中のListTile等の
             // インク(リップル/ホバー)が紙の背後に隠れないようにする。
-            child: Material(
-              type: MaterialType.transparency,
-              child: child,
-            ),
+            child: Material(type: MaterialType.transparency, child: child),
           ),
           const Positioned(
             top: -7,

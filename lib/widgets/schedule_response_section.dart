@@ -1,21 +1,23 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../repositories/schedule_repository.dart';
+import '../models/schedule_response.dart';
+import '../providers/schedule_providers.dart';
 import '../theme/app_colors.dart';
 
 /// 出欠の入力(参加/遅刻/欠席)と保存・削除ボタン。
-class ScheduleResponseSection extends StatefulWidget {
+class ScheduleResponseSection extends ConsumerStatefulWidget {
   const ScheduleResponseSection({super.key, required this.scheduleId});
 
   final String scheduleId;
 
   @override
-  State<ScheduleResponseSection> createState() =>
+  ConsumerState<ScheduleResponseSection> createState() =>
       _ScheduleResponseSectionState();
 }
 
-class _ScheduleResponseSectionState extends State<ScheduleResponseSection> {
+class _ScheduleResponseSectionState
+    extends ConsumerState<ScheduleResponseSection> {
   String status = '参加';
   TimeOfDay lateTime = const TimeOfDay(hour: 19, minute: 0);
   bool lateTimeUnknown = false;
@@ -27,17 +29,21 @@ class _ScheduleResponseSectionState extends State<ScheduleResponseSection> {
               : '${lateTime.hour.toString().padLeft(2, '0')}:${lateTime.minute.toString().padLeft(2, '0')}'
         : '';
 
-    await ScheduleRepository.saveResponse(
-      scheduleId: widget.scheduleId,
-      status: status,
-      lateTime: lateTimeText,
-    );
+    await ref
+        .read(scheduleRepositoryProvider)
+        .saveResponse(
+          scheduleId: widget.scheduleId,
+          status: status,
+          lateTime: lateTimeText,
+        );
 
     _showSnack('出欠を保存しました');
   }
 
   Future<void> _deleteMine() async {
-    await ScheduleRepository.deleteMyResponse(widget.scheduleId);
+    await ref
+        .read(scheduleRepositoryProvider)
+        .deleteMyResponse(widget.scheduleId);
     _showSnack('自分の出欠を削除しました');
   }
 
@@ -76,10 +82,7 @@ class _ScheduleResponseSectionState extends State<ScheduleResponseSection> {
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _save,
-            child: const Text('出欠を保存'),
-          ),
+          child: ElevatedButton(onPressed: _save, child: const Text('出欠を保存')),
         ),
         const SizedBox(height: 8),
         SizedBox(
@@ -125,7 +128,7 @@ class _ScheduleResponseSectionState extends State<ScheduleResponseSection> {
 }
 
 /// 出欠一覧(集計カード + 回答リスト)。
-class ScheduleResponseList extends StatelessWidget {
+class ScheduleResponseList extends ConsumerWidget {
   const ScheduleResponseList({super.key, required this.scheduleId});
 
   final String scheduleId;
@@ -133,9 +136,9 @@ class ScheduleResponseList extends StatelessWidget {
   static const _statuses = ['参加', '遅刻', '欠席'];
 
   @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: ScheduleRepository.watchResponses(scheduleId),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return StreamBuilder<List<ScheduleResponse>>(
+      stream: ref.watch(scheduleRepositoryProvider).watchResponses(scheduleId),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Padding(
@@ -144,7 +147,7 @@ class ScheduleResponseList extends StatelessWidget {
           );
         }
 
-        final responses = snapshot.data!.docs;
+        final responses = snapshot.data!;
 
         if (responses.isEmpty) {
           return const Column(
@@ -163,7 +166,7 @@ class ScheduleResponseList extends StatelessWidget {
                     child: _CountCard(
                       label: status,
                       count: responses
-                          .where((doc) => doc.data()['status'] == status)
+                          .where((response) => response.status == status)
                           .length,
                     ),
                   ),
@@ -171,14 +174,13 @@ class ScheduleResponseList extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            ...responses.map((doc) {
-              final data = doc.data();
-              final responseStatus = data['status'] ?? '';
-              final responseLateTime = data['lateTime'] ?? '';
+            ...responses.map((response) {
+              final responseStatus = response.status;
+              final responseLateTime = response.lateTime;
 
               return ListTile(
                 leading: Icon(_statusIcon(responseStatus)),
-                title: Text(data['playerName'] ?? ''),
+                title: Text(response.playerName),
                 subtitle: Text(
                   responseStatus == '遅刻'
                       ? '遅刻：$responseLateTime から参加'
@@ -262,10 +264,7 @@ class _CountCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '$count人',
-            style: const TextStyle(
-              fontSize: 18,
-              color: AppColors.textPrimary,
-            ),
+            style: const TextStyle(fontSize: 18, color: AppColors.textPrimary),
           ),
         ],
       ),
