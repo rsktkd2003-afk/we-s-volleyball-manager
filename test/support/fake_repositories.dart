@@ -22,15 +22,93 @@ class _Streams<T> {
   bool get hasActiveListener => controllers.any((c) => c.hasListener);
 }
 
+/// players の Fake。Firestore と同様に、書き込みは発行した時点で購読中の
+/// ストリームへ反映し(レイテンシ補償)、サーバーが拒否した場合は元に戻す。
 class FakePlayerRepository implements PlayerRepository {
   final _streams = _Streams<List<Player>>();
+
+  /// 購読中のストリームへ最後に流れた一覧。
+  List<Player>? _latest;
 
   List<StreamController<List<Player>>> get controllers => _streams.controllers;
   StreamController<List<Player>> get last => _streams.last;
   bool get hasActiveListener => _streams.hasActiveListener;
 
   @override
-  Stream<List<Player>> watchPlayers() => _streams.open();
+  Stream<List<Player>> watchPlayers() {
+    return _streams.open().map((players) => _latest = players);
+  }
+
+  /// 書き込みの呼び出し記録(実際のFirestoreには書き込まない)。
+  final List<Player> updatedPlayers = [];
+
+  /// 実際に書き込まれるフィールド(部分更新の内容)。
+  final List<Map<String, dynamic>> updatedFields = [];
+  final List<String> deletedPlayerIds = [];
+
+  /// 設定すると、次の書き込みをこのエラーで失敗させる(1回で解除)。
+  Object? nextUpdateError;
+  Object? nextDeleteError;
+
+  /// 設定すると、サーバーの応答をこの Future の完了まで保留する
+  /// (オフライン等で書き込みが完了しない状況の検証用)。
+  Completer<void>? updateGate;
+  Completer<void>? deleteGate;
+
+  void _emitLocal(List<Player> players) {
+    if (_streams.controllers.isEmpty) return;
+    final controller = _streams.last;
+    if (!controller.isClosed) controller.add(players);
+  }
+
+  @override
+  Future<void> updateEditableFields(Player player) async {
+    final fields = player.toEditableJson();
+    updatedPlayers.add(player);
+    updatedFields.add(fields);
+
+    final before = _latest;
+    if (before != null) {
+      _emitLocal([
+        for (final current in before)
+          current.id == player.id
+              ? Player.fromJson(
+                  {...current.toJson(), ...fields},
+                  id: current.id,
+                )
+              : current,
+      ]);
+    }
+
+    await updateGate?.future;
+    final error = nextUpdateError;
+    nextUpdateError = null;
+    if (error != null) {
+      if (before != null) _emitLocal(before);
+      throw error;
+    }
+  }
+
+  @override
+  Future<void> deletePlayer(String playerId) async {
+    deletedPlayerIds.add(playerId);
+
+    final before = _latest;
+    if (before != null) {
+      _emitLocal([
+        for (final current in before)
+          if (current.id != playerId) current,
+      ]);
+    }
+
+    await deleteGate?.future;
+    final error = nextDeleteError;
+    nextDeleteError = null;
+    if (error != null) {
+      if (before != null) _emitLocal(before);
+      throw error;
+    }
+  }
 }
 
 class FakeScheduleReadRepository implements ScheduleReadRepository {

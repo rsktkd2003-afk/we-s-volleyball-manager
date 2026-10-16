@@ -13,7 +13,6 @@ import '../widgets/club_board_placeholder.dart';
 import '../widgets/cork_board_background.dart';
 import '../widgets/player_list.dart';
 import 'player_detail_screen.dart';
-import 'player_edit_screen.dart';
 
 /// メンバータブ。既存の PLAYER SCOUTING BOARD (選手一覧・検索・追加・
 /// 詳細・編集・削除) を表示する。
@@ -90,8 +89,10 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
     });
   }
 
+  /// 選手詳細を開く。編集・削除(確認・エラー処理を含む)は詳細画面で行い、
+  /// 削除に成功した場合のみ一覧へ戻って完了を通知する。
   Future<void> openPlayerDetail(Player player) async {
-    final result = await Navigator.push<String>(
+    final result = await Navigator.push<PlayerDetailResult>(
       context,
       MaterialPageRoute(
         builder: (context) => PlayerDetailScreen(player: player),
@@ -99,21 +100,11 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
     );
     if (!mounted) return;
 
-    if (result == 'delete') {
-      await FirebaseFirestore.instance
-          .collection(FirestoreCollections.players)
-          .doc(player.id)
-          .delete();
-      return;
-    }
-
-    if (result == 'edit') {
-      await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PlayerEditScreen(player: player),
-        ),
-      );
+    if (result == PlayerDetailResult.deleted) {
+      final name = player.name.trim().isEmpty ? '名前未設定' : player.name;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('「$name」を削除しました')));
     }
   }
 

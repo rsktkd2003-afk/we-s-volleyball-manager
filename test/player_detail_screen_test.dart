@@ -169,52 +169,28 @@ void main() {
     expect(find.byType(AbilityRadarChart), findsOneWidget);
   });
 
-  for (final (action, width) in const [
-    ('edit', 400.0),
-    ('delete', 400.0),
-    ('edit', 1200.0),
-    ('delete', 1200.0),
-  ]) {
-    testWidgets('${width.toInt()}px幅の$actionボタンは従来通りの結果を返す',
+  // 詳細画面は編集・削除を自分で処理する(Phase 2.1)。
+  // 以前は 'edit' / 'delete' を返して閉じていたが、現在は
+  // 削除は確認ダイアログ、編集は編集画面を開くことをどの幅でも確認する。
+  for (final width in const [360.0, 600.0, 1200.0]) {
+    testWidgets('${width.toInt()}px幅で削除ボタンは確認ダイアログを開く',
         (tester) async {
-      await tester.binding.setSurfaceSize(Size(width, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await pumpDetail(tester, _fullPlayer(), size: Size(width, 900));
 
-      String? result;
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            currentUserRepositoryProvider.overrideWithValue(
-              FakeCurrentUserRepository()..auth.add('member-1'),
-            ),
-          ],
-          child: MaterialApp(
-            home: Builder(
-              builder: (context) => Scaffold(
-                body: TextButton(
-                  onPressed: () async {
-                    result = await Navigator.push<String>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PlayerDetailScreen(player: _fullPlayer()),
-                      ),
-                    );
-                  },
-                  child: const Text('open'),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip(action == 'edit' ? '編集' : '削除'));
+      await tester.tap(find.byTooltip('削除'));
       await tester.pumpAndSettle();
 
-      expect(result, action);
-      expect(find.byType(PlayerDetailScreen), findsNothing);
+      expect(find.text('選手を削除しますか？'), findsOneWidget);
+      expect(find.byType(PlayerDetailScreen), findsOneWidget);
+    });
+
+    testWidgets('${width.toInt()}px幅で編集ボタンは編集画面を開く', (tester) async {
+      await pumpDetail(tester, _fullPlayer(), size: Size(width, 900));
+
+      await tester.tap(find.byTooltip('編集'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('選手編集'), findsOneWidget);
     });
   }
 }

@@ -69,6 +69,39 @@ class Player {
 
   double get jumpHeight => maxReach - standingReach;
 
+  /// 選手編集画面で編集できる項目のFirestoreフィールド名。
+  /// ownerUid・linkedUid と、編集対象外の能力パラメータ
+  /// (jump / power / speed / stamina / gameSense) は含めない。
+  static const editableFieldNames = [
+    'name',
+    'number',
+    'position',
+    'dominantHand',
+    'grade',
+    'height',
+    'weight',
+    'standingReach',
+    'maxReach',
+    'blockReach',
+    'spike',
+    'serve',
+    'reception',
+    'dig',
+    'toss',
+    'block',
+    'mobility',
+    'roles',
+  ];
+
+  /// 編集できる項目だけを [toJson] と同じフィールド名・型で返す。
+  /// 部分更新に使い、連携情報などを古い値で上書きしないようにする。
+  Map<String, dynamic> toEditableJson() {
+    final json = toJson();
+    return {
+      for (final name in editableFieldNames) name: json[name],
+    };
+  }
+
   bool get isLinked => linkedUid != null && linkedUid!.isNotEmpty;
 
   Map<String, dynamic> toJson() {
