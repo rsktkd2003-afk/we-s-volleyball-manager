@@ -3,7 +3,7 @@ part of 'player_detail_screen.dart';
 class _PaperCard extends StatelessWidget {
   const _PaperCard({
     required this.child,
-    this.paperColor = const Color(0xFFF8F5ED),
+    this.paperColor = AppColors.paper,
     this.pinColor = const Color(0xFFC0392B),
     this.padding = const EdgeInsets.fromLTRB(24, 34, 24, 24),
     this.tapeTopLeft = false,
@@ -27,9 +27,8 @@ class _PaperCard extends StatelessWidget {
           padding: padding,
           decoration: BoxDecoration(
             color: paperColor,
-            border: Border.all(
-              color: const Color(0xFFD8D2C6),
-            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFD8D2C6)),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x36000000),
@@ -49,12 +48,7 @@ class _PaperCard extends StatelessWidget {
           top: -10,
           left: 0,
           right: 0,
-          child: Center(
-            child: PinBadge(
-              size: 22,
-              color: pinColor,
-            ),
-          ),
+          child: Center(child: PinBadge(size: 22, color: pinColor)),
         ),
         if (tapeTopLeft)
           const Positioned(
@@ -74,9 +68,7 @@ class _PaperCard extends StatelessWidget {
 }
 
 class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({
-    required this.title,
-  });
+  const _SectionHeading({required this.title});
 
   final String title;
 
@@ -97,15 +89,8 @@ class _SectionHeading extends StatelessWidget {
         const SizedBox(height: 10),
         Stack(
           children: [
-            Container(
-              height: 1,
-              color: const Color(0xFFD0CBC0),
-            ),
-            Container(
-              width: 82,
-              height: 2,
-              color: const Color(0xFFC0392B),
-            ),
+            Container(height: 1, color: const Color(0xFFD0CBC0)),
+            Container(width: 82, height: 2, color: const Color(0xFFC0392B)),
           ],
         ),
       ],
@@ -114,10 +99,7 @@ class _SectionHeading extends StatelessWidget {
 }
 
 class _InformationField extends StatelessWidget {
-  const _InformationField({
-    required this.label,
-    required this.value,
-  });
+  const _InformationField({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -127,20 +109,13 @@ class _InformationField extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 9),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFD3CDC0),
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: Color(0xFFD3CDC0))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 9,
-              vertical: 4,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
             color: const Color(0xFFE9DFC5),
             child: Text(
               label,
@@ -171,10 +146,7 @@ class _InformationField extends StatelessWidget {
 }
 
 class _UnderlinedDataRow extends StatelessWidget {
-  const _UnderlinedDataRow({
-    required this.label,
-    required this.value,
-  });
+  const _UnderlinedDataRow({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -182,16 +154,9 @@ class _UnderlinedDataRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 2,
-        vertical: 11,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 11),
       decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFD2CCC0),
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: Color(0xFFD2CCC0))),
       ),
       child: Row(
         children: [
@@ -239,15 +204,9 @@ class _BoardScrew extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: const RadialGradient(
           center: Alignment(-0.3, -0.3),
-          colors: [
-            Color(0xFFF2F2F2),
-            Color(0xFF9B9B99),
-            Color(0xFF555553),
-          ],
+          colors: [Color(0xFFF2F2F2), Color(0xFF9B9B99), Color(0xFF555553)],
         ),
-        border: Border.all(
-          color: const Color(0xFF6C6C69),
-        ),
+        border: Border.all(color: const Color(0xFF6C6C69)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x66000000),
@@ -259,11 +218,7 @@ class _BoardScrew extends StatelessWidget {
       child: Transform.rotate(
         angle: math.pi / 4,
         child: Center(
-          child: Container(
-            width: 7,
-            height: 1,
-            color: const Color(0xFF555555),
-          ),
+          child: Container(width: 7, height: 1, color: const Color(0xFF555555)),
         ),
       ),
     );
@@ -271,10 +226,7 @@ class _BoardScrew extends StatelessWidget {
 }
 
 class _LabelValue {
-  const _LabelValue({
-    required this.label,
-    required this.value,
-  });
+  const _LabelValue({required this.label, required this.value});
 
   final String label;
   final String value;

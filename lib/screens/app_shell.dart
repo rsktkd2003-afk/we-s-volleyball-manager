@@ -4,23 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/player_link_request_providers.dart';
 import '../theme/app_colors.dart';
 import '../widgets/wes_app_bar.dart';
-import 'home_screen.dart';
 import 'members_screen.dart';
 import 'notification_center_screen.dart';
-import 'practice_screen.dart';
 import 'profile_screen.dart';
 import 'schedule_screen.dart';
 import 'settings_screen.dart';
 
 /// AppShell のタブ。並び順がナビゲーションの表示順になる。
 enum AppShellTab {
-  home('ホーム', Icons.dashboard_outlined, Icons.dashboard),
   schedule('予定', Icons.calendar_month_outlined, Icons.calendar_month),
-  practice(
-    '練習',
-    Icons.sports_volleyball_outlined,
-    Icons.sports_volleyball,
-  ),
   members('メンバー', Icons.groups_outlined, Icons.groups);
 
   const AppShellTab(this.label, this.icon, this.selectedIcon);
@@ -41,7 +33,7 @@ class AppShellBreakpoints {
   static const double extendedRail = 1200;
 }
 
-/// ログイン後のルート画面。WE'S CLUB BOARD の4タブを切り替える。
+/// ログイン後のルート画面。WE'S CLUB BOARD の2タブを切り替える。
 ///
 /// 各タブは初めて開いたときに生成し、以後は状態を保持する(IndexedStack)。
 /// まだ開いていないタブは生成しないため、そのタブの Firestore 購読も
@@ -49,7 +41,7 @@ class AppShellBreakpoints {
 /// 初回スナップショットの全件読み取りが繰り返されるため、維持する。
 /// ログアウト時は AppShell ごと破棄され、すべての購読が解除される。
 class AppShell extends ConsumerStatefulWidget {
-  const AppShell({super.key, this.initialTab = AppShellTab.home});
+  const AppShell({super.key, this.initialTab = AppShellTab.schedule});
 
   final AppShellTab initialTab;
 
@@ -90,24 +82,20 @@ class _AppShellState extends ConsumerState<AppShell> {
   Future<void> _openNotifications() async {
     await Navigator.push<void>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const NotificationCenterScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const NotificationCenterScreen()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     // 権限の読み込み中・エラー時は管理者として扱わない。
-    final isAdmin = ref.watch(currentUserIsAdminProvider).maybeWhen(
-          data: (value) => value,
-          orElse: () => false,
-        );
+    final isAdmin = ref
+        .watch(currentUserIsAdminProvider)
+        .maybeWhen(data: (value) => value, orElse: () => false);
     final pendingRequestCount = isAdmin
-        ? ref.watch(pendingPlayerLinkRequestsProvider).maybeWhen(
-              data: (requests) => requests.length,
-              orElse: () => 0,
-            )
+        ? ref
+              .watch(pendingPlayerLinkRequestsProvider)
+              .maybeWhen(data: (requests) => requests.length, orElse: () => 0)
         : 0;
 
     final tabs = _buildTabStack();
@@ -165,10 +153,7 @@ class _AppShellState extends ConsumerState<AppShell> {
             // 非表示タブのアニメーションを止める。
             TickerMode(
               enabled: tab == _currentTab,
-              child: KeyedSubtree(
-                key: ValueKey(tab),
-                child: _buildTab(tab),
-              ),
+              child: KeyedSubtree(key: ValueKey(tab), child: _buildTab(tab)),
             )
           else
             const SizedBox.shrink(),
@@ -178,9 +163,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   Widget _buildTab(AppShellTab tab) {
     return switch (tab) {
-      AppShellTab.home => const HomeScreen(),
       AppShellTab.schedule => const ScheduleScreen(),
-      AppShellTab.practice => const PracticeScreen(),
       AppShellTab.members => const MembersScreen(),
     };
   }
@@ -203,14 +186,14 @@ class _ClubNavigationBar extends StatelessWidget {
           onSelected(AppShellTab.values[index]),
       backgroundColor: AppColors.paper,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: AppColors.accent.withValues(alpha: 0.14),
+      indicatorColor: AppColors.action.withValues(alpha: 0.14),
       elevation: 6,
       shadowColor: const Color(0x33000000),
       destinations: [
         for (final tab in AppShellTab.values)
           NavigationDestination(
             icon: Icon(tab.icon, color: AppColors.textSecondary),
-            selectedIcon: Icon(tab.selectedIcon, color: AppColors.accent),
+            selectedIcon: Icon(tab.selectedIcon, color: AppColors.action),
             label: tab.label,
           ),
       ],
@@ -243,10 +226,11 @@ class _ClubNavigationRail extends StatelessWidget {
             ? NavigationRailLabelType.none
             : NavigationRailLabelType.all,
         backgroundColor: AppColors.paper,
-        indicatorColor: AppColors.accent.withValues(alpha: 0.14),
-        selectedIconTheme: const IconThemeData(color: AppColors.accent),
-        unselectedIconTheme:
-            const IconThemeData(color: AppColors.textSecondary),
+        indicatorColor: AppColors.action.withValues(alpha: 0.14),
+        selectedIconTheme: const IconThemeData(color: AppColors.action),
+        unselectedIconTheme: const IconThemeData(
+          color: AppColors.textSecondary,
+        ),
         selectedLabelTextStyle: const TextStyle(
           color: AppColors.textPrimary,
           fontWeight: FontWeight.bold,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/player.dart';
 import '../providers/player_providers.dart';
+import '../utils/player_edit_input.dart';
 import '../utils/player_operation_errors.dart';
 import '../utils/player_roles.dart';
 
@@ -113,100 +114,69 @@ class _PlayerEditScreenState extends ConsumerState<PlayerEditScreen> {
     super.dispose();
   }
 
-  double _toDouble(String value) {
-    return double.tryParse(value) ?? 0.0;
-  }
-
-  int _toInt(String value) {
-    return int.tryParse(value) ?? 0;
-  }
-
-  int _toAbility(String value) {
-    final parsed = int.tryParse(value) ?? 5;
-    return parsed.clamp(1, 10);
-  }
-
   Future<void> savePlayer() async {
-  if (_saving) return;
+    if (_saving) return;
 
-  final updatedPlayer = Player(
-    id: widget.player.id,
+    final updatedPlayer = playerFromEditInput(
+      original: widget.player,
+      name: nameController.text,
+      number: numberController.text,
+      position: positionController.text,
+      dominantHand: dominantHandController.text,
+      grade: gradeController.text,
+      height: heightController.text,
+      weight: weightController.text,
+      standingReach: standingReachController.text,
+      maxReach: maxReachController.text,
+      blockReach: blockReachController.text,
+      spike: spikeController.text,
+      serve: serveController.text,
+      reception: receptionController.text,
+      dig: digController.text,
+      toss: tossController.text,
+      block: blockController.text,
+      mobility: mobilityController.text,
+      roles: selectedRoles.toList(),
+    );
 
-    // 既存情報を保持
-    ownerUid: widget.player.ownerUid,
-    linkedUid: widget.player.linkedUid,
+    // 画面を離れた後でも結果を通知できるよう、アプリ共通の通知先を控える。
+    final messenger = ScaffoldMessenger.of(context);
+    final displayName = updatedPlayer.name.isEmpty
+        ? '名前未設定'
+        : updatedPlayer.name;
 
-    // 基本情報
-    name: nameController.text.trim(),
-    number: _toInt(numberController.text),
-    position: positionController.text.trim(),
-    dominantHand: dominantHandController.text.trim(),
-    grade: gradeController.text.trim(),
+    setState(() => _saving = true);
 
-    // 身体データ
-    height: _toDouble(heightController.text),
-    weight: _toDouble(weightController.text),
-    standingReach: _toDouble(standingReachController.text),
-    maxReach: _toDouble(maxReachController.text),
-    blockReach: _toDouble(blockReachController.text),
+    try {
+      // 編集できる項目だけを書き込み、連携情報などは上書きしない。
+      await ref
+          .read(playerRepositoryProvider)
+          .updateEditableFields(updatedPlayer);
+    } catch (error) {
+      debugPrint('PlayerEditScreen save error: $error');
+      final message = playerOperationErrorMessage(error, action: '保存');
 
-    // 能力値
-    spike: _toAbility(spikeController.text),
-    serve: _toAbility(serveController.text),
-    reception: _toAbility(receptionController.text),
-    dig: _toAbility(digController.text),
-    toss: _toAbility(tossController.text),
-    block: _toAbility(blockController.text),
-    mobility: _toAbility(mobilityController.text),
-
-    // 編集対象ではないパラメータを保持
-    jump: widget.player.jump,
-    power: widget.player.power,
-    speed: widget.player.speed,
-    stamina: widget.player.stamina,
-    gameSense: widget.player.gameSense,
-
-    // 役職
-    roles: selectedRoles.toList(),
-  );
-
-  // 画面を離れた後でも結果を通知できるよう、アプリ共通の通知先を控える。
-  final messenger = ScaffoldMessenger.of(context);
-  final displayName =
-      updatedPlayer.name.isEmpty ? '名前未設定' : updatedPlayer.name;
-
-  setState(() => _saving = true);
-
-  try {
-    // 編集できる項目だけを書き込み、連携情報などは上書きしない。
-    await ref.read(playerRepositoryProvider).updateEditableFields(
-          updatedPlayer,
-        );
-  } catch (error) {
-    debugPrint('PlayerEditScreen save error: $error');
-    final message = playerOperationErrorMessage(error, action: '保存');
+      if (mounted) {
+        // 入力内容はそのまま残し、再度保存できるようにする。
+        setState(() => _saving = false);
+        _showSnackBar(messenger, message);
+      } else {
+        // 保存中に画面を離れていた場合も、失敗したことを伝える。
+        _showSnackBar(messenger, '「$displayName」の$message');
+      }
+      return;
+    }
 
     if (mounted) {
-      // 入力内容はそのまま残し、再度保存できるようにする。
-      setState(() => _saving = false);
-      _showSnackBar(messenger, message);
+      // 保存成功時のみ、保存した内容を詳細画面へ返す。
+      // 完了して自ら閉じるため、「処理を続けています」の通知を出さない。
+      _saving = false;
+      Navigator.pop(context, updatedPlayer);
     } else {
-      // 保存中に画面を離れていた場合も、失敗したことを伝える。
-      _showSnackBar(messenger, '「$displayName」の$message');
+      // 保存中に画面を離れていた場合は、完了をここで伝える。
+      _showSnackBar(messenger, '「$displayName」の保存が完了しました');
     }
-    return;
   }
-
-  if (mounted) {
-    // 保存成功時のみ、保存した内容を詳細画面へ返す。
-    // 完了して自ら閉じるため、「処理を続けています」の通知を出さない。
-    _saving = false;
-    Navigator.pop(context, updatedPlayer);
-  } else {
-    // 保存中に画面を離れていた場合は、完了をここで伝える。
-    _showSnackBar(messenger, '「$displayName」の保存が完了しました');
-  }
-}
 
   /// 通知先が破棄済み(ログアウト等)なら何もしない。
   static void _showSnackBar(ScaffoldMessengerState messenger, String message) {
@@ -254,7 +224,11 @@ class _PlayerEditScreenState extends ConsumerState<PlayerEditScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             _TextField(controller: nameController, label: '名前'),
-            _TextField(controller: numberController, label: '背番号'),
+            _TextField(
+              controller: numberController,
+              label: '背番号',
+              keyboardType: TextInputType.number,
+            ),
             _TextField(controller: positionController, label: 'ポジション'),
             _TextField(controller: dominantHandController, label: '利き手'),
             _TextField(controller: gradeController, label: '学年'),
@@ -265,11 +239,41 @@ class _PlayerEditScreenState extends ConsumerState<PlayerEditScreen> {
               '身体データ',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            _TextField(controller: heightController, label: '身長 cm'),
-            _TextField(controller: weightController, label: '体重 kg'),
-            _TextField(controller: standingReachController, label: '指高 cm'),
-            _TextField(controller: maxReachController, label: '最高到達点 cm'),
-            _TextField(controller: blockReachController, label: 'ブロック到達点 cm'),
+            _TextField(
+              controller: heightController,
+              label: '身長 cm',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+            ),
+            _TextField(
+              controller: weightController,
+              label: '体重 kg',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+            ),
+            _TextField(
+              controller: standingReachController,
+              label: '指高 cm',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+            ),
+            _TextField(
+              controller: maxReachController,
+              label: '最高到達点 cm',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+            ),
+            _TextField(
+              controller: blockReachController,
+              label: 'ブロック到達点 cm',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+            ),
 
             const SizedBox(height: 24),
 
@@ -277,13 +281,41 @@ class _PlayerEditScreenState extends ConsumerState<PlayerEditScreen> {
               '能力値（1〜10）',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            _TextField(controller: spikeController, label: 'スパイク'),
-            _TextField(controller: serveController, label: 'サーブ'),
-            _TextField(controller: receptionController, label: 'レセプション'),
-            _TextField(controller: digController, label: 'ディグ'),
-            _TextField(controller: tossController, label: 'トス'),
-            _TextField(controller: blockController, label: 'ブロック'),
-            _TextField(controller: mobilityController, label: '機動力'),
+            _TextField(
+              controller: spikeController,
+              label: 'スパイク',
+              keyboardType: TextInputType.number,
+            ),
+            _TextField(
+              controller: serveController,
+              label: 'サーブ',
+              keyboardType: TextInputType.number,
+            ),
+            _TextField(
+              controller: receptionController,
+              label: 'レセプション',
+              keyboardType: TextInputType.number,
+            ),
+            _TextField(
+              controller: digController,
+              label: 'ディグ',
+              keyboardType: TextInputType.number,
+            ),
+            _TextField(
+              controller: tossController,
+              label: 'トス',
+              keyboardType: TextInputType.number,
+            ),
+            _TextField(
+              controller: blockController,
+              label: 'ブロック',
+              keyboardType: TextInputType.number,
+            ),
+            _TextField(
+              controller: mobilityController,
+              label: '機動力',
+              keyboardType: TextInputType.number,
+            ),
 
             const SizedBox(height: 24),
 
@@ -348,10 +380,15 @@ class _PendingNotice extends StatelessWidget {
 }
 
 class _TextField extends StatelessWidget {
-  const _TextField({required this.controller, required this.label});
+  const _TextField({
+    required this.controller,
+    required this.label,
+    this.keyboardType = TextInputType.text,
+  });
 
   final TextEditingController controller;
   final String label;
+  final TextInputType keyboardType;
 
   @override
   Widget build(BuildContext context) {
@@ -359,7 +396,8 @@ class _TextField extends StatelessWidget {
       padding: const EdgeInsets.only(top: 12),
       child: TextField(
         controller: controller,
-        keyboardType: TextInputType.number,
+        keyboardType: keyboardType,
+        textInputAction: TextInputAction.next,
         decoration: InputDecoration(
           labelText: label,
           border: const OutlineInputBorder(),

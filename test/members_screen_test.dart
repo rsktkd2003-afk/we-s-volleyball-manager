@@ -15,9 +15,7 @@ void main() {
 
   Widget buildApp() {
     return ProviderScope(
-      overrides: [
-        playerRepositoryProvider.overrideWithValue(repository),
-      ],
+      overrides: [playerRepositoryProvider.overrideWithValue(repository)],
       child: const MaterialApp(home: Scaffold(body: MembersScreen())),
     );
   }
@@ -73,6 +71,54 @@ void main() {
     expect(find.text('山田'), findsNothing);
   });
 
+  testWidgets('追加した名前をRepositoryへ渡し、Firestoreを直接利用しない', (tester) async {
+    await setLargeSurface(tester);
+    await tester.pumpWidget(buildApp());
+    repository.last.add([]);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('NEW PLAYER'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      ),
+      '  山田  ',
+    );
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+
+    expect(repository.addedNames, ['山田']);
+    expect(find.byType(AlertDialog), findsNothing);
+    // 一覧は保存成功を推測して追加せず、購読データの更新を待つ。
+    expect(find.text('山田'), findsNothing);
+    repository.last.add([testPlayer(id: 'new-id', name: '山田')]);
+    await tester.pumpAndSettle();
+    expect(find.text('山田'), findsOneWidget);
+  });
+
+  for (final cancel in [true, false]) {
+    testWidgets(cancel ? '追加をキャンセルすると書き込まない' : '空白の名前では書き込まない', (tester) async {
+      await setLargeSurface(tester);
+      await tester.pumpWidget(buildApp());
+      repository.last.add([]);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('NEW PLAYER'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(TextField),
+        ),
+        '   ',
+      );
+      await tester.tap(find.text(cancel ? 'Cancel' : 'Add'));
+      await tester.pumpAndSettle();
+      expect(repository.addedNames, isEmpty);
+    });
+  }
+
   testWidgets('読み取りエラー時はエラーと再読み込みを表示し、再購読できる', (tester) async {
     await setLargeSurface(tester);
     await tester.pumpWidget(buildApp());
@@ -102,9 +148,7 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          playerRepositoryProvider.overrideWithValue(repository),
-        ],
+        overrides: [playerRepositoryProvider.overrideWithValue(repository)],
         child: MaterialApp(
           home: ValueListenableBuilder<bool>(
             valueListenable: signedIn,

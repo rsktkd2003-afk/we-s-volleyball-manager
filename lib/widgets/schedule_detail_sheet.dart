@@ -1,16 +1,15 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/team_player.dart';
 import '../models/team_schedule.dart';
-import '../repositories/schedule_repository.dart';
-import '../services/firestore_service.dart';
+import '../providers/schedule_providers.dart';
 import '../theme/app_colors.dart';
 import '../utils/date_time_utils.dart';
 import 'schedule_response_section.dart';
 
 /// 予定の詳細表示・出欠入力・編集/削除の起点となるボトムシート。
-class ScheduleDetailSheet extends StatefulWidget {
+class ScheduleDetailSheet extends ConsumerStatefulWidget {
   const ScheduleDetailSheet({
     super.key,
     required this.schedule,
@@ -23,21 +22,23 @@ class ScheduleDetailSheet extends StatefulWidget {
   final void Function(TeamSchedule) onEdit;
 
   @override
-  State<ScheduleDetailSheet> createState() => _ScheduleDetailSheetState();
+  ConsumerState<ScheduleDetailSheet> createState() =>
+      _ScheduleDetailSheetState();
 }
 
-class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
-  String? get uid => FirebaseAuth.instance.currentUser?.uid;
+class _ScheduleDetailSheetState extends ConsumerState<ScheduleDetailSheet> {
+  String? get uid => ref.read(scheduleRepositoryProvider).currentUid;
 
   Future<void> deleteSchedule() async {
     final scheduleId = widget.schedule.id;
     if (scheduleId == null || uid == null) return;
+    final repository = ref.read(scheduleRepositoryProvider);
 
     // 削除直前にサーバーの最新 role を確認する。取得できない場合は
     // 管理者として扱わない(作成者本人の削除は従来通り可能)。
     bool admin;
     try {
-      admin = await FirestoreService.isCurrentUserAdmin();
+      admin = await repository.isCurrentUserAdmin();
     } catch (error) {
       debugPrint('ScheduleDetailSheet admin check error: $error');
       admin = false;
@@ -77,7 +78,7 @@ class _ScheduleDetailSheetState extends State<ScheduleDetailSheet> {
 
     if (!mounted || confirm != true) return;
 
-    await ScheduleRepository.deleteSchedule(scheduleId);
+    await repository.deleteSchedule(scheduleId);
 
     if (!mounted) return;
     Navigator.pop(context, true);

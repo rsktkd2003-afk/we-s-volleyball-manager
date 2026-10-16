@@ -78,7 +78,7 @@ class PlayerProfileNoteCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -87,7 +87,7 @@ class PlayerProfileNoteCard extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
                 decoration: BoxDecoration(
                   color: AppColors.paper,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   boxShadow: const [
                     BoxShadow(
                       blurRadius: 10,

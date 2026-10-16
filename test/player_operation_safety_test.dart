@@ -91,7 +91,9 @@ void main() {
   }
 
   Future<void> tapDelete(WidgetTester tester) async {
-    await tester.tap(find.byTooltip('削除'));
+    await tester.tap(find.byTooltip('その他の操作'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('選手を削除'));
     await tester.pumpAndSettle();
   }
 
@@ -148,8 +150,11 @@ void main() {
     });
 
     for (final (label, error, message) in [
-      ('permission-denied', _firestoreError('permission-denied'),
-          _permissionDeleteMessage),
+      (
+        'permission-denied',
+        _firestoreError('permission-denied'),
+        _permissionDeleteMessage,
+      ),
       ('unavailable', _firestoreError('unavailable'), _unavailableMessage),
       ('その他のFirestoreエラー', _firestoreError('internal'),
           _otherDeleteMessage),
@@ -168,8 +173,12 @@ void main() {
         expect(find.text(message), findsOneWidget);
         expect(find.textContaining('を削除しました'), findsNothing);
         // 内部情報(エラーコードや例外内容)は表示しない。
-        expect(find.textContaining(label == 'Firestore以外の例外' ? 'boom' : 'cloud_firestore'),
-            findsNothing);
+        expect(
+          find.textContaining(
+            label == 'Firestore以外の例外' ? 'boom' : 'cloud_firestore',
+          ),
+          findsNothing,
+        );
       });
     }
 
@@ -202,7 +211,14 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       expect(find.text('選手を削除しますか？'), findsNothing);
 
-      expect(find.text('削除中...'), findsOneWidget);
+      expect(
+        tester
+            .widget<PopupMenuButton<String>>(
+              find.byType(PopupMenuButton<String>),
+            )
+            .enabled,
+        isFalse,
+      );
       expect(
         find.byWidgetPredicate(
           (w) => w is LinearProgressIndicator && w.value == null,
@@ -212,7 +228,7 @@ void main() {
       expect(find.textContaining('この画面を離れても処理は続き'), findsOneWidget);
 
       // 削除・編集ボタンは押せない。
-      await tester.tap(find.byTooltip('削除'));
+      await tester.tap(find.byTooltip('その他の操作'));
       await tester.tap(find.byTooltip('編集'));
       await tester.pump(const Duration(milliseconds: 500));
       expect(find.text('選手を削除しますか？'), findsNothing);
@@ -245,10 +261,7 @@ void main() {
       expect(find.byType(PlayerDetailScreen), findsNothing);
       expect(find.byType(MembersScreen), findsOneWidget);
       // 結果は未確定なので、成功・失敗は断定しない。
-      expect(
-        find.text('削除処理を続けています。完了または失敗したときにお知らせします。'),
-        findsOneWidget,
-      );
+      expect(find.text('削除処理を続けています。完了または失敗したときにお知らせします。'), findsOneWidget);
       expect(find.text('「山田」を削除しました'), findsNothing);
 
       repository.deleteGate!.complete();
@@ -340,8 +353,11 @@ void main() {
     });
 
     for (final (label, error, message) in [
-      ('permission-denied', _firestoreError('permission-denied'),
-          _permissionSaveMessage),
+      (
+        'permission-denied',
+        _firestoreError('permission-denied'),
+        _permissionSaveMessage,
+      ),
       ('unavailable', _firestoreError('unavailable'), _unavailableMessage),
       ('その他のエラー', _firestoreError('internal'), _otherSaveMessage),
     ]) {
@@ -426,10 +442,7 @@ void main() {
 
       expect(find.byType(PlayerEditScreen), findsNothing);
       expect(find.byType(PlayerDetailScreen), findsOneWidget);
-      expect(
-        find.text('保存処理を続けています。完了または失敗したときにお知らせします。'),
-        findsOneWidget,
-      );
+      expect(find.text('保存処理を続けています。完了または失敗したときにお知らせします。'), findsOneWidget);
       // 結果は未確定なので、保存済みとは断定しない。
       expect(find.text('選手データを保存しました'), findsNothing);
       expect(find.textContaining('の保存が完了しました'), findsNothing);
@@ -491,8 +504,9 @@ void main() {
   });
 
   group('部分更新と連携情報', () {
-    testWidgets('更新時は編集項目だけを書き込み、ownerUid・linkedUid・対象外の項目は書き込まない',
-        (tester) async {
+    testWidgets('更新時は編集項目だけを書き込み、ownerUid・linkedUid・対象外の項目は書き込まない', (
+      tester,
+    ) async {
       await openDetailFromList(tester);
       await openEditor(tester);
 

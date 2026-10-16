@@ -5,8 +5,12 @@ import '../models/team_schedule.dart';
 import '../repositories/schedule_repository.dart';
 import 'cancelable_stream_provider.dart';
 
+final scheduleRepositoryProvider = Provider<ScheduleRepository>((ref) {
+  return FirebaseScheduleRepository();
+});
+
 final scheduleReadRepositoryProvider = Provider<ScheduleReadRepository>((ref) {
-  return const FirebaseScheduleReadRepository();
+  return ref.watch(scheduleRepositoryProvider);
 });
 
 /// schedules を開始日時順に取得する。購読者がいなくなると即座に購読を解除する。

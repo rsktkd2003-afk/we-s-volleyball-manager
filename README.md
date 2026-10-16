@@ -53,6 +53,9 @@ We's Volleyball Manager は、Flutter と Firebase を用いて開発したバ�
 
 ## Tech Stack
 
+開発時のコード経路・購読寿命・テスト対応・既知課題は
+[開発時のコード案内](docs/architecture.md) を参照してください。
+
 * Flutter
 * Dart
 * Firebase Authentication

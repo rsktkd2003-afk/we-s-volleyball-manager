@@ -29,10 +29,7 @@ enum PlayerDetailResult {
 /// - 編集: 編集画面で保存に成功した内容で表示を更新する。
 /// - 削除: 確認後に削除し、成功時のみ [PlayerDetailResult.deleted] を返して閉じる。
 class PlayerDetailScreen extends ConsumerStatefulWidget {
-  const PlayerDetailScreen({
-    super.key,
-    required this.player,
-  });
+  const PlayerDetailScreen({super.key, required this.player});
 
   final Player player;
 
@@ -115,9 +112,7 @@ class _PlayerDetailScreenState extends ConsumerState<PlayerDetailScreen> {
         return AlertDialog(
           backgroundColor: AppColors.paper,
           title: const Text('選手を削除しますか？'),
-          content: Text(
-            '「${_nameOf(_currentPlayer)}」を削除します。この操作は取り消せません。',
-          ),
+          content: Text('「${_nameOf(_currentPlayer)}」を削除します。この操作は取り消せません。'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -171,52 +166,24 @@ class _PlayerDetailScreenState extends ConsumerState<PlayerDetailScreen> {
   /// 削除処理中は両方とも押せないようにし、削除ボタンに進行状態を出す。
   List<Widget> _buildActions({required bool showLabels}) {
     final onEdit = _deleting ? null : _openEditor;
-    final onDelete = _deleting ? null : _confirmAndDelete;
-    const progress = SizedBox(
-      width: 18,
-      height: 18,
-      child: CircularProgressIndicator(strokeWidth: 2),
-    );
-
-    if (!showLabels) {
-      return [
-        IconButton(
-          tooltip: '編集',
-          icon: const Icon(Icons.edit_outlined),
-          onPressed: onEdit,
-        ),
-        IconButton(
-          tooltip: '削除',
-          icon: _deleting ? progress : const Icon(Icons.delete_outline),
-          color: _accentRed,
-          onPressed: onDelete,
-        ),
-      ];
-    }
-
     return [
-      Tooltip(
-        message: '編集',
-        child: TextButton.icon(
-          onPressed: onEdit,
-          style: TextButton.styleFrom(
-            foregroundColor: const Color(0xFF252525),
+      IconButton(
+        tooltip: '編集',
+        icon: const Icon(Icons.edit_outlined),
+        color: AppColors.action,
+        onPressed: onEdit,
+      ),
+      PopupMenuButton<String>(
+        tooltip: 'その他の操作',
+        enabled: !_deleting,
+        onSelected: (_) => _confirmAndDelete(),
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'delete',
+            child: Text('選手を削除', style: TextStyle(color: _accentRed)),
           ),
-          icon: const Icon(Icons.edit_outlined),
-          label: const Text('編集'),
-        ),
+        ],
       ),
-      const SizedBox(width: 4),
-      Tooltip(
-        message: '削除',
-        child: TextButton.icon(
-          onPressed: onDelete,
-          style: TextButton.styleFrom(foregroundColor: _accentRed),
-          icon: _deleting ? progress : const Icon(Icons.delete_outline),
-          label: Text(_deleting ? '削除中...' : '削除'),
-        ),
-      ),
-      const SizedBox(width: 8),
     ];
   }
 
@@ -241,22 +208,14 @@ class _PlayerDetailScreenState extends ConsumerState<PlayerDetailScreen> {
               backgroundColor: const Color(0xFFF7F5EF),
               foregroundColor: const Color(0xFF252525),
               elevation: 1,
-              actions: _buildActions(
-                showLabels: constraints.maxWidth >= 600,
-              ),
+              actions: _buildActions(showLabels: constraints.maxWidth >= 600),
               bottom: const TabBar(
                 labelColor: _accentRed,
                 unselectedLabelColor: AppColors.textSecondary,
                 indicatorColor: _accentRed,
                 tabs: [
-                  Tab(
-                    icon: Icon(Icons.badge_outlined),
-                    text: 'スカウトカード',
-                  ),
-                  Tab(
-                    icon: Icon(Icons.flag_outlined),
-                    text: '改善点',
-                  ),
+                  Tab(icon: Icon(Icons.badge_outlined), text: 'スカウトカード'),
+                  Tab(icon: Icon(Icons.flag_outlined), text: '改善点'),
                 ],
               ),
             ),
@@ -270,10 +229,7 @@ class _PlayerDetailScreenState extends ConsumerState<PlayerDetailScreen> {
                   child: TabBarView(
                     children: [
                       // 編集後に表示を確実に作り直すため、内容でキーを変える。
-                      _ScoutingBoard(
-                        key: ObjectKey(player),
-                        player: player,
-                      ),
+                      _ScoutingBoard(key: ObjectKey(player), player: player),
                       PlayerIssueSection(player: player),
                     ],
                   ),
@@ -307,10 +263,7 @@ class _DeletingNotice extends StatelessWidget {
 }
 
 class _ScoutingBoard extends StatelessWidget {
-  const _ScoutingBoard({
-    super.key,
-    required this.player,
-  });
+  const _ScoutingBoard({super.key, required this.player});
 
   final Player player;
 
@@ -327,34 +280,15 @@ class _ScoutingBoard extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFF1F0EC),
-                Color(0xFFE1E0DC),
-              ],
+              colors: [Color(0xFFF1F0EC), Color(0xFFE1E0DC)],
             ),
           ),
           child: Stack(
             children: [
-              const Positioned(
-                top: 10,
-                left: 10,
-                child: _BoardScrew(),
-              ),
-              const Positioned(
-                top: 10,
-                right: 10,
-                child: _BoardScrew(),
-              ),
-              const Positioned(
-                bottom: 10,
-                left: 10,
-                child: _BoardScrew(),
-              ),
-              const Positioned(
-                bottom: 10,
-                right: 10,
-                child: _BoardScrew(),
-              ),
+              const Positioned(top: 10, left: 10, child: _BoardScrew()),
+              const Positioned(top: 10, right: 10, child: _BoardScrew()),
+              const Positioned(bottom: 10, left: 10, child: _BoardScrew()),
+              const Positioned(bottom: 10, right: 10, child: _BoardScrew()),
               SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
                   horizontal: isDesktop ? 34 : 16,
@@ -365,10 +299,7 @@ class _ScoutingBoard extends StatelessWidget {
                     constraints: const BoxConstraints(maxWidth: 1500),
                     child: isDesktop
                         ? _DesktopLayout(player: player)
-                        : _CompactLayout(
-                            player: player,
-                            isTablet: isTablet,
-                          ),
+                        : _CompactLayout(player: player, isTablet: isTablet),
                   ),
                 ),
               ),
