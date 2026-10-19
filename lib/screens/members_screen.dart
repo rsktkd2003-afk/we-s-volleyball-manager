@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../dialogs/add_player_dialog.dart';
 import '../models/player.dart';
+import '../models/current_user_doc.dart';
+import '../providers/current_user_providers.dart';
+import '../widgets/player_profile_note_card.dart';
 import '../providers/player_providers.dart';
 import '../theme/app_colors.dart';
 import '../widgets/player_filter_bar.dart';
@@ -90,109 +93,160 @@ class _MembersScreenState extends ConsumerState<MembersScreen> {
   @override
   Widget build(BuildContext context) {
     final playersAsync = ref.watch(playersProvider);
+    final userState = ref.watch(currentUserDocProvider).asData?.value;
+    final myId = userState is CurrentUserDocLoaded
+        ? userState.user.playerId
+        : null;
+    final myPlayers = (playersAsync.asData?.value ?? <Player>[])
+        .where((p) => p.id == myId)
+        .toList();
+    final myCard = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final player in myPlayers) ...[
+          const Text(
+            'MY CARD',
+            style: TextStyle(
+              color: AppColors.action,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          PlayerProfileNoteCard(
+            player: player,
+            seed: 0,
+            isCompact: true,
+            onTap: () => openPlayerDetail(player),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ],
+    );
 
     return CorkBoardBackground(
       child: SafeArea(
         top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1400),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final width = constraints.maxWidth;
-                  // 一覧幅に応じて絞り込みの配置を切り替える。
-                  final filterLayout = width >= 900
-                      ? PlayerFilterLayout.panel
-                      : width >= 600
-                          ? PlayerFilterLayout.inline
-                          : PlayerFilterLayout.compact;
+        child: Column(
+          children: [
+            if (myPlayers.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1400),
+                    child: myCard,
+                  ),
+                ),
+              ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1400),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        // 一覧幅に応じて絞り込みの配置を切り替える。
+                        final filterLayout = width >= 900
+                            ? PlayerFilterLayout.panel
+                            : width >= 600
+                            ? PlayerFilterLayout.inline
+                            : PlayerFilterLayout.compact;
 
-                  final filterPanel = PlayerFilterBar(
-                    searchQuery: searchQuery,
-                    grade: selectedGrade,
-                    position: selectedPosition,
-                    sortType: sortType,
-                    layout: filterLayout,
-                    expanded: filtersExpanded,
-                    onExpandedChanged: (value) =>
-                        setState(() => filtersExpanded = value),
-                    onSearchChanged: (value) =>
-                        setState(() => searchQuery = value),
-                    onGradeChanged: (value) =>
-                        setState(() => selectedGrade = value),
-                    onPositionChanged: (value) =>
-                        setState(() => selectedPosition = value),
-                    onSortChanged: (value) =>
-                        setState(() => sortType = value),
-                  );
+                        final filterPanel = PlayerFilterBar(
+                          searchQuery: searchQuery,
+                          grade: selectedGrade,
+                          position: selectedPosition,
+                          sortType: sortType,
+                          layout: filterLayout,
+                          expanded: filtersExpanded,
+                          onExpandedChanged: (value) =>
+                              setState(() => filtersExpanded = value),
+                          onSearchChanged: (value) =>
+                              setState(() => searchQuery = value),
+                          onGradeChanged: (value) =>
+                              setState(() => selectedGrade = value),
+                          onPositionChanged: (value) =>
+                              setState(() => selectedPosition = value),
+                          onSortChanged: (value) =>
+                              setState(() => sortType = value),
+                        );
 
-                  final grid = playersAsync.when(
-                    data: (players) {
-                      final filtered = getFilteredPlayers(players);
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _ResultCountLabel(
-                            shown: filtered.length,
-                            total: players.length,
-                          ),
-                          const SizedBox(height: 12),
-                          PlayerList(
-                            players: filtered,
-                            onTap: openPlayerDetail,
-                            onAddPlayer: addPlayer,
-                          ),
-                        ],
-                      );
-                    },
-                    loading: () => const _PlayersLoading(),
-                    error: (error, _) {
-                      debugPrint('MembersScreen players stream error: $error');
-                      return _PlayersError(
-                        error: error,
-                        onRetry: () => ref.invalidate(playersProvider),
-                      );
-                    },
-                  );
+                        final grid = playersAsync.when(
+                          data: (players) {
+                            final filtered = getFilteredPlayers(
+                              players.where((p) => p.id != myId).toList(),
+                            );
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _ResultCountLabel(
+                                  shown: filtered.length,
+                                  total: players
+                                      .where((p) => p.id != myId)
+                                      .length,
+                                ),
+                                const SizedBox(height: 12),
+                                PlayerList(
+                                  players: filtered,
+                                  onTap: openPlayerDetail,
+                                  onAddPlayer: addPlayer,
+                                ),
+                              ],
+                            );
+                          },
+                          loading: () => const _PlayersLoading(),
+                          error: (error, _) {
+                            debugPrint(
+                              'MembersScreen players stream error: $error',
+                            );
+                            return _PlayersError(
+                              error: error,
+                              onRetry: () => ref.invalidate(playersProvider),
+                            );
+                          },
+                        );
 
-                  const heading = ClubBoardHeading(
-                    title: 'PLAYER SCOUTING BOARD',
-                  );
+                        const heading = ClubBoardHeading(
+                          title: 'PLAYER SCOUTING BOARD',
+                        );
 
-                  if (filterLayout != PlayerFilterLayout.panel) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        heading,
-                        const SizedBox(height: 12),
-                        filterPanel,
-                        const SizedBox(height: 12),
-                        grid,
-                      ],
-                    );
-                  }
+                        if (filterLayout != PlayerFilterLayout.panel) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              heading,
+                              const SizedBox(height: 12),
+                              filterPanel,
+                              const SizedBox(height: 12),
+                              grid,
+                            ],
+                          );
+                        }
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      heading,
-                      const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(child: grid),
-                          const SizedBox(width: 20),
-                          SizedBox(width: 260, child: filterPanel),
-                        ],
-                      ),
-                    ],
-                  );
-                },
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            heading,
+                            const SizedBox(height: 12),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: grid),
+                                const SizedBox(width: 20),
+                                SizedBox(width: 260, child: filterPanel),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

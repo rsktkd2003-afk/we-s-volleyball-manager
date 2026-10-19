@@ -97,11 +97,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     ) {
       next.whenOrNull(
         data: (list) {
-          // 切り分け用ログ
-          debugPrint('Schedules: ${list.length}');
-          for (final s in list) {
-            debugPrint('${s.title} ${s.start} - ${s.end}');
-          }
           _setSchedules(list);
         },
         error: (error, _) => _showStreamError(error),
@@ -362,6 +357,12 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           decoration: BoxDecoration(
             color: _stickyColorFor(schedule.title),
+            border: Border(
+              left: BorderSide(
+                color: _eventAccentFor(schedule.title),
+                width: 4,
+              ),
+            ),
             borderRadius: BorderRadius.circular(4),
           ),
           alignment: Alignment.centerLeft,
@@ -384,7 +385,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: AppColors.textSecondary,
+                  color: AppColors.textPrimary,
                   fontSize: 9,
                 ),
               ),
@@ -403,12 +404,20 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
 
   /// タイトルに含まれるキーワードから付箋の色を決める（画像の配色に準拠）。
   /// 該当キーワードが無い場合は「練習」系として青を使う。
-  Color _stickyColorFor(String title) {
-    if (title.contains('ウェイト')) return const Color(0xFFECEEF0);
+  Color _eventAccentFor(String title) {
+    if (title.contains('ウェイト')) return const Color(0xFF715414);
     if (title.contains('試合') || title.contains('公式戦') || title.contains('大会')) {
-      return const Color(0xFFFBE9E6);
+      return const Color(0xFFAA3025);
     }
-    return const Color(0xFFE9EFF4);
+    return AppColors.action;
+  }
+
+  Color _stickyColorFor(String title) {
+    if (title.contains('ウェイト')) return const Color(0xFFF3E6BB);
+    if (title.contains('試合') || title.contains('公式戦') || title.contains('大会')) {
+      return const Color(0xFFFAD6CF);
+    }
+    return const Color(0xFFD4E6F4);
   }
 }
 

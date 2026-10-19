@@ -62,17 +62,17 @@ Player _unsetPlayer() {
 }
 
 List<Player> _roster() => [
-      _player(id: 'p1', name: '山田', number: 12, position: 'MB', grade: '2年'),
-      _player(id: 'p2', name: '佐藤', number: 3, position: 'WS', grade: '1年'),
-      _player(
-        id: 'p3',
-        name: '安藤',
-        number: 7,
-        position: 'S',
-        grade: '3年',
-        roles: const ['captain', 'sns', 'contact'],
-      ),
-    ];
+  _player(id: 'p1', name: '山田', number: 12, position: 'MB', grade: '2年'),
+  _player(id: 'p2', name: '佐藤', number: 3, position: 'WS', grade: '1年'),
+  _player(
+    id: 'p3',
+    name: '安藤',
+    number: 7,
+    position: 'S',
+    grade: '3年',
+    roles: const ['captain', 'sns', 'contact'],
+  ),
+];
 
 /// 2つのテキストの表示順(上→下、左→右)を比較する。
 bool _appearsBefore(WidgetTester tester, String a, String b) {
@@ -234,7 +234,10 @@ void main() {
       expect(find.text('名前未設定'), findsOneWidget);
       expect(find.text('未設定'), findsWidgets);
       // 身長・最高到達点が未入力なら数値ではなく「—」。
-      expect(find.text('—'), findsNWidgets(2));
+      expect(
+        find.text('—'),
+        findsNothing,
+      ); // Compact cards defer body stats to details.
       expect(find.text('0cm'), findsNothing);
     });
 

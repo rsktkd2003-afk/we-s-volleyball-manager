@@ -20,12 +20,12 @@ class PlayerList extends StatelessWidget {
   static const double _mobileBreakpoint = 600;
 
   /// 詳細表示カードの目安の幅。一覧幅からこの幅を基準に列数を決める。
-  static const double _targetCardWidth = 240;
+  static const double _targetCardWidth = 440;
 
   static const double _spacing = 12;
 
   /// カード上端のピンが前の行のカードに重ならないよう、行間を広めに取る。
-  static const double _runSpacing = 24;
+  static const double _runSpacing = 12;
 
   @override
   Widget build(BuildContext context) {
@@ -40,8 +40,8 @@ class PlayerList extends StatelessWidget {
         final columns = isCompact
             ? (1)
             : ((width + _spacing) / (_targetCardWidth + _spacing))
-                .floor()
-                .clamp(2, 5);
+                  .floor()
+                  .clamp(1, 2);
         final cardWidth = (width - _spacing * (columns - 1)) / columns;
 
         return Wrap(
@@ -63,7 +63,7 @@ class PlayerList extends StatelessWidget {
               ),
             SizedBox(
               width: cardWidth,
-              height: isCompact ? 132 : 200,
+              height: 96,
               child: NewPlayerCard(onTap: onAddPlayer),
             ),
           ],

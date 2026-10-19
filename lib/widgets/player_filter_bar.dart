@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
-import 'pin_badge.dart';
 
 /// 絞り込みパネルの配置。
 enum PlayerFilterLayout {
@@ -92,7 +91,7 @@ class _PlayerFilterBarState extends State<PlayerFilterBar> {
               ? const EdgeInsets.fromLTRB(18, 24, 18, 20)
               : const EdgeInsets.fromLTRB(14, 18, 14, 14),
           decoration: BoxDecoration(
-            color: AppColors.paper,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(10),
             boxShadow: const [
               BoxShadow(
@@ -103,12 +102,6 @@ class _PlayerFilterBarState extends State<PlayerFilterBar> {
             ],
           ),
           child: content,
-        ),
-        const Positioned(
-          top: -12,
-          left: 0,
-          right: 0,
-          child: Center(child: PinBadge(size: 20)),
         ),
       ],
     );
@@ -130,14 +123,26 @@ class _PlayerFilterBarState extends State<PlayerFilterBar> {
         const SizedBox(height: 14),
         _searchField(),
         const SizedBox(height: 16),
-        ..._labeledDropdown('GRADE', widget.grade, PlayerFilterBar.grades,
-            widget.onGradeChanged),
+        ..._labeledDropdown(
+          'GRADE',
+          widget.grade,
+          PlayerFilterBar.grades,
+          widget.onGradeChanged,
+        ),
         const SizedBox(height: 16),
-        ..._labeledDropdown('POSITION', widget.position,
-            PlayerFilterBar.positions, widget.onPositionChanged),
+        ..._labeledDropdown(
+          'POSITION',
+          widget.position,
+          PlayerFilterBar.positions,
+          widget.onPositionChanged,
+        ),
         const SizedBox(height: 16),
-        ..._labeledDropdown('SORT', widget.sortType, PlayerFilterBar.sortTypes,
-            widget.onSortChanged),
+        ..._labeledDropdown(
+          'SORT',
+          widget.sortType,
+          PlayerFilterBar.sortTypes,
+          widget.onSortChanged,
+        ),
       ],
     );
   }
@@ -232,12 +237,24 @@ class _PlayerFilterBarState extends State<PlayerFilterBar> {
   /// 0: 学年 / 1: ポジション / 2: 並び順
   Widget _conditionColumn(int index) {
     final children = switch (index) {
-      0 => _labeledDropdown('GRADE', widget.grade, PlayerFilterBar.grades,
-          widget.onGradeChanged),
-      1 => _labeledDropdown('POSITION', widget.position,
-          PlayerFilterBar.positions, widget.onPositionChanged),
-      _ => _labeledDropdown('SORT', widget.sortType,
-          PlayerFilterBar.sortTypes, widget.onSortChanged),
+      0 => _labeledDropdown(
+        'GRADE',
+        widget.grade,
+        PlayerFilterBar.grades,
+        widget.onGradeChanged,
+      ),
+      1 => _labeledDropdown(
+        'POSITION',
+        widget.position,
+        PlayerFilterBar.positions,
+        widget.onPositionChanged,
+      ),
+      _ => _labeledDropdown(
+        'SORT',
+        widget.sortType,
+        PlayerFilterBar.sortTypes,
+        widget.onSortChanged,
+      ),
     };
 
     return Column(
@@ -290,7 +307,10 @@ class _PlayerFilterBarState extends State<PlayerFilterBar> {
         isDense: true,
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(6),
           borderSide: const BorderSide(color: Color(0xFFDDD8CE)),
@@ -300,11 +320,7 @@ class _PlayerFilterBarState extends State<PlayerFilterBar> {
           .map(
             (item) => DropdownMenuItem(
               value: item,
-              child: Text(
-                item,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(item, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           )
           .toList(),

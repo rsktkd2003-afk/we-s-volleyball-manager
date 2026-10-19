@@ -202,7 +202,9 @@ void main() {
 
     await tester.enterText(find.byType(TextField).first, '佐藤');
     await tester.pumpAndSettle();
-    expect(find.text('山田'), findsNothing);
+    // Linked player remains visible once in MY CARD, independent of search.
+    expect(find.text('山田'), findsOneWidget);
+    expect(find.text('MY CARD'), findsOneWidget);
 
     await openTab(tester, '予定');
     scheduleRepository.schedules.add([]);
@@ -214,7 +216,9 @@ void main() {
 
     // 検索条件と絞り込み結果が残っている。
     expect(find.widgetWithText(TextField, '佐藤'), findsOneWidget);
-    expect(find.text('山田'), findsNothing);
+    // Linked player remains visible once in MY CARD, independent of search.
+    expect(find.text('山田'), findsOneWidget);
+    expect(find.text('MY CARD'), findsOneWidget);
     // 切り替えのたびに再購読しない(予定・メンバーで選手データの購読を共有)。
     expect(playerRepository.controllers, hasLength(1));
     expect(playerRepository.hasActiveListener, isTrue);
@@ -241,7 +245,9 @@ void main() {
     expect(find.byType(NavigationRail), findsOneWidget);
     expect(find.text('PLAYER SCOUTING BOARD'), findsOneWidget);
     expect(find.widgetWithText(TextField, '佐藤'), findsOneWidget);
-    expect(find.text('山田'), findsNothing);
+    // Linked player remains visible once in MY CARD, independent of search.
+    expect(find.text('山田'), findsOneWidget);
+    expect(find.text('MY CARD'), findsOneWidget);
     expect(playerRepository.controllers, hasLength(1));
   });
 
